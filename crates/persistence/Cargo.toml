@@ -1,0 +1,17 @@
+[package]
+name = "dpda-persistence"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dpda-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+rusqlite.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+

@@ -1,0 +1,15 @@
+{
+  "url": "https://api.opendota.com/api/players/70388657/matches?limit=2&offset=0&significant=0&project=hero_id&project=start_time&project=duration&project=game_mode&project=patch&project=gold_per_min&project=xp_per_min&project=lane_role&project=heroes",
+  "fetched_at_utc": "2026-11-03T02:33:15Z",
+  "status": 200,
+  "field_projection": false,
+  "headers": {
+    "X-Rate-Limit-Remaining-Minute": "57",
+    "X-Rate-Limit-Remaining-Day": "2994"
+  },
+  "redactions": {
+    "non_target_account_ids_removed": 18,
+    "retained_account_id": 70388657,
+    "note": "Non-target player account_id fields removed for fixture minimization; hero IDs, slots, outcomes and statistics unchanged."
+  }
+}

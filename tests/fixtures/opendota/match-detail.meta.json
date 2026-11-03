@@ -1,0 +1,15 @@
+{
+  "url": "https://api.opendota.com/api/matches/9073857007",
+  "fetched_at_utc": "2026-11-03T02:33:10Z",
+  "status": 200,
+  "field_projection": true,
+  "headers": {
+    "X-Rate-Limit-Remaining-Minute": "59",
+    "X-Rate-Limit-Remaining-Day": "2996"
+  },
+  "redactions": {
+    "non_target_account_ids_removed": 9,
+    "retained_account_id": 70388657,
+    "note": "Non-target player account_id fields removed for fixture minimization; hero IDs, slots, outcomes and statistics unchanged."
+  }
+}

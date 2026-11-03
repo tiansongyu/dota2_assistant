@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-03T03:04:33.679Z",
+  "environment": "Linux Google Chrome headless; real rendered empty UI, no IPC mocks",
+  "checks": [
+    {
+      "page": "总览",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "page": "我的英雄池",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "page": "历史战绩",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "page": "BP 推荐",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "page": "设置",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "page": "总览",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "page": "我的英雄池",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "page": "历史战绩",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "page": "BP 推荐",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "page": "设置",
+      "width": 1024,
+      "overflow": false
+    },
+    {
+      "page": "总览",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "page": "我的英雄池",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "page": "历史战绩",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "page": "BP 推荐",
+      "width": 375,
+      "overflow": false
+    },
+    {
+      "page": "设置",
+      "width": 375,
+      "overflow": false
+    }
+  ],
+  "account_validation": true,
+  "browser_ipc_failure_visible": true,
+  "pool_exclusion": true,
+  "settings_validation": true,
+  "overlay_empty_layout": true,
+  "calibration_export_plumbing": true,
+  "calibration_input_is_not_dota": true,
+  "runtime_errors": []
+}

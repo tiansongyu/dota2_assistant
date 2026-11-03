@@ -1,0 +1,132 @@
+{
+  "match_id": 9073857007,
+  "start_time": 1793662065,
+  "duration": 2819,
+  "game_mode": 22,
+  "patch": 60,
+  "radiant_win": true,
+  "version": 22,
+  "players": [
+    {
+      "player_slot": 0,
+      "hero_id": 5,
+      "kills": 8,
+      "deaths": 7,
+      "assists": 25,
+      "last_hits": 168,
+      "denies": 2,
+      "gold_per_min": 467,
+      "xp_per_min": 759,
+      "lane_role": 1
+    },
+    {
+      "player_slot": 1,
+      "hero_id": 60,
+      "kills": 11,
+      "deaths": 8,
+      "assists": 14,
+      "last_hits": 391,
+      "denies": 11,
+      "gold_per_min": 618,
+      "xp_per_min": 956,
+      "lane_role": 3
+    },
+    {
+      "player_slot": 2,
+      "hero_id": 6,
+      "kills": 10,
+      "deaths": 6,
+      "assists": 19,
+      "last_hits": 505,
+      "denies": 4,
+      "gold_per_min": 756,
+      "xp_per_min": 987,
+      "lane_role": 1
+    },
+    {
+      "account_id": 70388657,
+      "player_slot": 3,
+      "hero_id": 39,
+      "kills": 17,
+      "deaths": 1,
+      "assists": 11,
+      "last_hits": 578,
+      "denies": 8,
+      "gold_per_min": 927,
+      "xp_per_min": 1393,
+      "lane_role": 2
+    },
+    {
+      "player_slot": 4,
+      "hero_id": 3,
+      "kills": 2,
+      "deaths": 6,
+      "assists": 21,
+      "last_hits": 58,
+      "denies": 6,
+      "gold_per_min": 322,
+      "xp_per_min": 548,
+      "lane_role": 3
+    },
+    {
+      "player_slot": 128,
+      "hero_id": 19,
+      "kills": 4,
+      "deaths": 9,
+      "assists": 12,
+      "last_hits": 400,
+      "denies": 3,
+      "gold_per_min": 528,
+      "xp_per_min": 725,
+      "lane_role": 1
+    },
+    {
+      "player_slot": 129,
+      "hero_id": 121,
+      "kills": 6,
+      "deaths": 10,
+      "assists": 9,
+      "last_hits": 113,
+      "denies": 0,
+      "gold_per_min": 356,
+      "xp_per_min": 441,
+      "lane_role": 1
+    },
+    {
+      "player_slot": 130,
+      "hero_id": 79,
+      "kills": 5,
+      "deaths": 14,
+      "assists": 15,
+      "last_hits": 123,
+      "denies": 2,
+      "gold_per_min": 383,
+      "xp_per_min": 553,
+      "lane_role": 3
+    },
+    {
+      "player_slot": 131,
+      "hero_id": 36,
+      "kills": 7,
+      "deaths": 6,
+      "assists": 14,
+      "last_hits": 503,
+      "denies": 8,
+      "gold_per_min": 709,
+      "xp_per_min": 996,
+      "lane_role": 2
+    },
+    {
+      "player_slot": 132,
+      "hero_id": 29,
+      "kills": 6,
+      "deaths": 9,
+      "assists": 17,
+      "last_hits": 415,
+      "denies": 1,
+      "gold_per_min": 609,
+      "xp_per_min": 886,
+      "lane_role": 3
+    }
+  ]
+}

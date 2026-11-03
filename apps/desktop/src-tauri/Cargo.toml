@@ -1,0 +1,34 @@
+[package]
+name = "dpda-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "dpda_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.5", features = [] }
+tauri-plugin-global-shortcut = "=2.4.1"
+tauri-plugin-window-state = "=2.5.0"
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+dpda-domain.workspace = true
+dpda-persistence.workspace = true
+dpda-history.workspace = true
+dpda-data-provider.workspace = true
+dpda-hero-pool.workspace = true
+dpda-recommender.workspace = true
+dpda-capture.workspace = true
+dpda-vision.workspace = true
+dpda-draft-state.workspace = true

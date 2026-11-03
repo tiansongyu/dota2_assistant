@@ -1,0 +1,12 @@
+{
+  "source": "https://github.com/odota/dotaconstants",
+  "commit": "5c0242df9057848fa2036ca3fafe9f2bd4508163",
+  "version": "10.8.0",
+  "retrieved_at": "2026-11-02",
+  "hero_count": 127,
+  "license": "MIT; Valve image rights are separate",
+  "files": [
+    "heroes.json",
+    "patches.json"
+  ]
+}

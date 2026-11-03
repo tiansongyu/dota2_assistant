@@ -1,0 +1,15 @@
+[package]
+name = "dpda-recommender"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dpda-domain.workspace = true
+dpda-hero-pool.workspace = true
+dpda-statistics.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+dpda-persistence.workspace = true

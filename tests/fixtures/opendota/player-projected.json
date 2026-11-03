@@ -1,0 +1,92 @@
+[
+  {
+    "match_id": 9073857007,
+    "player_slot": 3,
+    "radiant_win": true,
+    "hero_id": 39,
+    "start_time": 1793662065,
+    "duration": 2819,
+    "game_mode": 22,
+    "gold_per_min": 927,
+    "xp_per_min": 1393,
+    "lane_role": 2,
+    "heroes": {
+      "0": {
+        "hero_id": 5
+      },
+      "1": {
+        "hero_id": 60
+      },
+      "2": {
+        "hero_id": 6
+      },
+      "3": {
+        "account_id": 70388657,
+        "hero_id": 39
+      },
+      "4": {
+        "hero_id": 3
+      },
+      "128": {
+        "hero_id": 19
+      },
+      "129": {
+        "hero_id": 121
+      },
+      "130": {
+        "hero_id": 79
+      },
+      "131": {
+        "hero_id": 36
+      },
+      "132": {
+        "hero_id": 29
+      }
+    }
+  },
+  {
+    "match_id": 9073314837,
+    "player_slot": 129,
+    "radiant_win": false,
+    "hero_id": 76,
+    "start_time": 1793634710,
+    "duration": 2980,
+    "game_mode": 22,
+    "gold_per_min": 653,
+    "xp_per_min": 1047,
+    "lane_role": null,
+    "heroes": {
+      "0": {
+        "hero_id": 129
+      },
+      "1": {
+        "hero_id": 145
+      },
+      "2": {
+        "hero_id": 121
+      },
+      "3": {
+        "hero_id": 128
+      },
+      "4": {
+        "hero_id": 131
+      },
+      "128": {
+        "hero_id": 44
+      },
+      "129": {
+        "account_id": 70388657,
+        "hero_id": 76
+      },
+      "130": {
+        "hero_id": 5
+      },
+      "131": {
+        "hero_id": 107
+      },
+      "132": {
+        "hero_id": 105
+      }
+    }
+  }
+]

@@ -1,0 +1,16 @@
+/target/
+**/node_modules/
+**/dist/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
+*.log
+.env
+!.env.example
+/artifacts/
+**/__pycache__/
+**/.DS_Store
+/apps/desktop/src-tauri/gen/
+/apps/desktop/src-tauri/runtime/
+/apps/desktop/src-tauri/bundle-windows.json

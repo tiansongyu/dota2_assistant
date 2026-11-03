@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "local-desktop",
+  "description": "Local windows: events and explicit window controls only",
+  "windows": ["main", "overlay"],
+  "permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-hide", "core:window:allow-show", "core:window:allow-set-ignore-cursor-events"]
+}

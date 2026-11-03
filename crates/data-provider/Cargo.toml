@@ -1,0 +1,20 @@
+[package]
+name = "dpda-data-provider"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dpda-domain.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+httpdate = "1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["net", "io-util"] }
+

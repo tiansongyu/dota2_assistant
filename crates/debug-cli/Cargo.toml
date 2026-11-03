@@ -1,0 +1,23 @@
+[package]
+name = "dpda-debug"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+clap = { version = "4.6.7", features = ["derive"] }
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["signal"] }
+reqwest.workspace = true
+dpda-domain.workspace = true
+dpda-data-provider.workspace = true
+dpda-persistence.workspace = true
+dpda-history.workspace = true
+dpda-hero-pool.workspace = true
+dpda-recommender.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

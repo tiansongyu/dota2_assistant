@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = ["crates/*", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+license = "MIT"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
+tracing = "0.1"
+tempfile = "3"
+dpda-domain = { path = "crates/domain" }
+dpda-statistics = { path = "crates/statistics" }
+dpda-persistence = { path = "crates/persistence" }
+dpda-data-provider = { path = "crates/data-provider" }
+dpda-history = { path = "crates/history" }
+dpda-hero-pool = { path = "crates/hero-pool" }
+dpda-draft-state = { path = "crates/draft-state" }
+dpda-recommender = { path = "crates/recommender" }
+dpda-capture = { path = "crates/capture" }
+dpda-vision = { path = "crates/vision" }
+
+[profile.dev]
+debug = 0
+
+[profile.test]
+debug = 0
