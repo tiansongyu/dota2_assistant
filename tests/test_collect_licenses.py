@@ -30,9 +30,10 @@ class LicenseCollectionTests(unittest.TestCase):
             first.mkdir()
             second.mkdir()
             # Deliberately not a real license: test only byte preservation and provenance.
+            # Write exact bytes so Windows newline translation cannot alter the fixture.
             text = "SYNTHETIC TEST TEXT — not a legal license\n"
-            (first / "LICENSE").write_text(text, encoding="utf-8")
-            (second / "copying.txt").write_text(text, encoding="utf-8")
+            (first / "LICENSE").write_bytes(text.encode("utf-8"))
+            (second / "copying.txt").write_bytes(text.encode("utf-8"))
             packages = [self.package(first, "one"), self.package(second, "two")]
             documents = COLLECTOR.collect_texts(packages)
             self.assertEqual(len(documents), 1)
