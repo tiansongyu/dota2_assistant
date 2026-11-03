@@ -255,16 +255,37 @@ fn save_settings(
     {
         return Err("恢复快捷键未注册，不能启用点击穿透".into());
     }
+    let database = db(&state)?;
+    let previous = crate::settings(&database)?;
     if let Some(window) = app.get_webview_window("overlay") {
         window
             .set_ignore_cursor_events(settings.overlay_click_through)
             .map_err(error)?;
+        if previous.overlay_compact != settings.overlay_compact {
+            let size = window
+                .inner_size()
+                .map_err(error)?
+                .to_logical::<f64>(window.scale_factor().map_err(error)?);
+            window
+                .set_size(tauri::LogicalSize::new(
+                    size.width,
+                    overlay_height(settings.overlay_compact),
+                ))
+                .map_err(error)?;
+        }
     }
-    db(&state)?
+    database
         .set_setting("app_settings", &settings)
         .map_err(error)?;
     emit(&app);
     Ok(())
+}
+fn overlay_height(compact: bool) -> f64 {
+    if compact {
+        420.0
+    } else {
+        620.0
+    }
 }
 #[tauri::command]
 fn open_overlay(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String> {
@@ -279,7 +300,7 @@ fn open_overlay(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(),
         tauri::WebviewUrl::App("index.html?overlay=1".into()),
     )
     .title("DPDA · BP 推荐")
-    .inner_size(420.0, 620.0)
+    .inner_size(420.0, overlay_height(settings.overlay_compact))
     .min_inner_size(320.0, 240.0)
     .decorations(false)
     .transparent(true)
@@ -287,6 +308,18 @@ fn open_overlay(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(),
     .skip_taskbar(true)
     .build()
     .map_err(error)?;
+    // Apply the selected mode after the window-state plugin has restored geometry.
+    let width = window
+        .inner_size()
+        .map_err(error)?
+        .to_logical::<f64>(window.scale_factor().map_err(error)?)
+        .width;
+    window
+        .set_size(tauri::LogicalSize::new(
+            width,
+            overlay_height(settings.overlay_compact),
+        ))
+        .map_err(error)?;
     if settings.overlay_click_through
         && app
             .global_shortcut()
