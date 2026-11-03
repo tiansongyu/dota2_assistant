@@ -44,17 +44,39 @@ jobs:
           Copy-Item "$opencvRoot\build\x64\vc16\bin\opencv_world4110.dll" apps/desktop/src-tauri/runtime/
           Copy-Item "$opencvRoot\LICENSE.txt" apps/desktop/src-tauri/runtime/OpenCV-LICENSE.txt
           Copy-Item "$opencvRoot\build\etc\licenses" apps/desktop/src-tauri/runtime/opencv-licenses -Recurse
-          $resources = @{ 'runtime/opencv_world4110.dll' = './opencv_world4110.dll'; 'runtime/OpenCV-LICENSE.txt' = './OpenCV-LICENSE.txt'; 'runtime/opencv-licenses/' = './opencv-licenses/' }
+          $resources = @{ 'runtime/opencv_world4110.dll' = './opencv_world4110.dll'; 'runtime/OpenCV-LICENSE.txt' = './OpenCV-LICENSE.txt'; 'runtime/opencv-licenses/' = './opencv-licenses/'; 'runtime/THIRD_PARTY_LICENSES.txt' = './THIRD_PARTY_LICENSES.txt'; 'runtime/DPDA-LICENSE.txt' = './DPDA-LICENSE.txt' }
           @{ bundle = @{ resources = $resources } } | ConvertTo-Json -Depth 5 | Set-Content apps/desktop/src-tauri/bundle-windows.json
       - run: npm ci --prefix apps/desktop
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo test --workspace --locked
+      - run: python -m unittest discover -s tests -p "test_*.py"
       - run: npm --prefix apps/desktop run typecheck
       - run: npm --prefix apps/desktop run lint
+      - name: Collect dependency licenses
+        shell: pwsh
+        run: |
+          python scripts/collect-licenses.py --strict-normal --output apps/desktop/src-tauri/runtime/THIRD_PARTY_LICENSES.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency notice collection failed' }
+          Copy-Item LICENSE apps/desktop/src-tauri/runtime/DPDA-LICENSE.txt
       - name: Build NSIS installer (unsigned development build)
         working-directory: apps/desktop
         run: npm run tauri -- build --config src-tauri/bundle-windows.json
+      - name: Install and launch on CI runner (not a clean-PC or game test)
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem target/release/bundle/nsis/*.exe | Select-Object -First 1
+          $installDirectory = Join-Path $env:RUNNER_TEMP 'dpda-install-smoke'
+          $setup = Start-Process $installer.FullName -ArgumentList @('/S', "/D=$installDirectory") -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw "Installer exited $($setup.ExitCode)" }
+          if (!(Test-Path "$installDirectory\opencv_world4110.dll")) { throw 'Bundled OpenCV runtime is missing beside the executable' }
+          $program = Join-Path $installDirectory 'dpda-desktop.exe'
+          $process = Start-Process $program -PassThru
+          Start-Sleep -Seconds 8
+          if ($process.HasExited) { throw "Installed application exited during startup: $($process.ExitCode)" }
+          $process.CloseMainWindow() | Out-Null
+          if (!$process.WaitForExit(5000)) { Stop-Process -Id $process.Id }
+          Write-Output 'NSIS install and installed-process startup succeeded on the CI runner.'
       - name: Installer checksums
         shell: pwsh
         run: |

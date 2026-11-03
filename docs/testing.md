@@ -14,11 +14,17 @@
 | OpenDota 网络 | 公开研究账号真实分页、阵容、重复导入检查通过 | 2 页 4 场；详细见 [历史 smoke](reports/history-smoke.md) |
 | Linux CLI 网络 | 127 英雄、2 条玩家历史、单场 10 个英雄结构通过；另导入 10 场 | 小样本接口验证，非完整历史覆盖证明 |
 | CLI 取消 | 实际 SIGINT 后返回 `paused`，检查点落库 | 继续扫描需遵守安全重扫语义 |
+| 合成性能诊断 | 10k / 50k 历史的读取、聚合、推荐均完成五轮测量 | [报告](reports/synthetic-performance.md)，不表示真实游戏 FPS 或桌面稳态内存 |
 | Windows 捕获编译 | `x86_64-pc-windows-gnu` 交叉 check 与严格 clippy 通过 | 没有执行 Windows 捕获 |
+| 原生 Tauri 集成 | Linux WebKitGTK，25 项检查 / 26 次真实 IPC 调用通过 | 真实 SQLite、双窗口、紧凑尺寸及重启；详见 [原生报告](reports/native-smoke.md) |
 | Tauri Linux 构建 | `npm run tauri -- build --debug --no-bundle` 通过 | Windows 发布包另由 Windows workflow 验证 |
 | 前端依赖审计 | npm audit 包括开发依赖为 0 条已报告漏洞 | 是该时间点的数据库结果，不保证没有未知漏洞 |
 
 浏览器脚本：[ui-smoke.mjs](../apps/desktop/tests/ui-smoke.mjs)；结构化结果：[browser-smoke-result.json](../tests/ui/browser-smoke-result.json)。
+
+GitHub 首轮 [Windows 构建](https://github.com/tiansongyu/dota2_assistant/actions/runs/41570539160) 通过并生成 NSIS 开发安装包；它只证明该提交在 CI 的编译、测试和打包，尚不证明干净 Windows 用户环境或游戏验收。
+
+GitHub 首轮 [Linux 质量门禁](https://github.com/tiansongyu/dota2_assistant/actions/runs/41570539110) 通过，已下载其独立 CLI 产物并在本机解压运行 `doctor`，SQLite 自检正常。
 
 ## 运行质量门禁
 

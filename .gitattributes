@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.zip binary
+*.exe binary
+*.gz binary
+# Preserve upstream legal texts byte-for-byte, including their original spacing.
+assets/licenses/** -whitespace

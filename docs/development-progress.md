@@ -22,7 +22,7 @@
 
 新增/修改：`Cargo.toml`、`apps/desktop`、`crates/domain`、`crates/persistence`、构建与检查脚本。
 
-测试：全 Workspace 编译、50 项 Rust 测试、严格 clippy/fmt 和前端门禁通过；Linux Tauri debug 产物可构建。
+测试：全 Workspace 编译、50 项 Rust 测试、严格 clippy/fmt 和前端门禁通过；Linux Tauri debug 产物可构建，25 项原生检查 / 26 次真实 IPC 通过。
 
 尚未验证：全部 Windows UI 原生行为及安装环境。
 
@@ -78,7 +78,7 @@
 
 新增/修改：Tauri 服务、悬浮页面、诊断面板、捕获生命周期。
 
-测试：浏览器悬浮布局、快捷键恢复的后端约束、Linux 原生构建。
+测试：浏览器悬浮布局、快捷键恢复的后端约束、Linux 原生构建和双窗口实际测试通过；修正紧凑模式原生窗口高度并验证宽度保留。
 
 尚未验证：实际 DOTA2 窗口遮挡、Windows多显示器、长期资源占用和 FPS。
 

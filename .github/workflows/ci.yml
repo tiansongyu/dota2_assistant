@@ -30,12 +30,15 @@ jobs:
       - run: scripts/check.sh
       - name: Build independent Linux API diagnostic binary
         run: cargo build --locked --release -p dpda-debug
+      - name: Collect dependency licenses
+        run: python3 scripts/collect-licenses.py --strict-normal --output artifacts/THIRD_PARTY_LICENSES.txt
       - name: Package developer diagnostic tool
         run: |
           mkdir -p artifacts/dpda-linux-debug
-          cp target/release/dpda-debug LICENSE docs/linux-debug.md artifacts/dpda-linux-debug/
+          cp target/release/dpda-debug LICENSE docs/linux-debug.md artifacts/THIRD_PARTY_LICENSES.txt artifacts/dpda-linux-debug/
           tar -czf artifacts/dpda-linux-debug-x86_64.tar.gz -C artifacts dpda-linux-debug
-          sha256sum artifacts/dpda-linux-debug-x86_64.tar.gz > artifacts/SHA256SUMS-linux.txt
+          cd artifacts
+          sha256sum dpda-linux-debug-x86_64.tar.gz > SHA256SUMS-linux.txt
       - uses: actions/upload-artifact@v7
         with:
           name: dpda-linux-debug

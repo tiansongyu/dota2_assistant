@@ -1,5 +1,7 @@
 # Dota Personal Draft Assistant
 
+[![Quality gates](https://github.com/tiansongyu/dota2_assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/tiansongyu/dota2_assistant/actions/workflows/ci.yml) [![Windows build](https://github.com/tiansongyu/dota2_assistant/actions/workflows/windows.yml/badge.svg)](https://github.com/tiansongyu/dota2_assistant/actions/workflows/windows.yml)
+
 **DPDA** 是以个人英雄池为边界的 DOTA2 BP 助手：同步公开战绩，在本地分析熟练度、历史对抗与协同，再为当前阵容推荐 Top 3—5 英雄。
 
 当前为 **0.1 开发版本**。真实 OpenDota 导入、SQLite、个人池、可解释评分和 Linux 调试工具已有实现与测试。Windows 捕获代码已完成交叉检查；真实 DOTA2 截图准确率、游戏内性能和清洁机安装尚未验收。不要把开发安装包当作已经验证的完整产品。具体证据见 [测试记录](docs/testing.md) 和 [进展](docs/development-progress.md)。
