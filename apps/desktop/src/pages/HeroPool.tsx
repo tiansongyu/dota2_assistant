@@ -3,7 +3,7 @@ import { Ban, Check, Save, Search, Shield } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
 import { api } from '../services/api';
 import { action } from '../stores/app-store';
-import { decimal, heroName, percent, roles } from '../services/format';
+import { decimal, heroName, percent, positionNames, roles } from '../services/format';
 import { EmptyState, HeroMark, WinRate } from '../components/common';
 import type { PoolConfig } from '../types';
 
@@ -19,6 +19,15 @@ export function HeroPool() {
     () => new Map(snapshot.hero_stats.map((hero) => [hero.hero_id, hero])),
     [snapshot.hero_stats],
   );
+  const positionStats = new Map(
+    snapshot.position_analysis.heroes.map((hero) => [hero.hero_id, hero]),
+  );
+  function effectiveRoles(id: number) {
+    if (Object.hasOwn(pool.roles, id)) return pool.roles[id];
+    // A locally removed override must immediately show the automatic result.
+    if (Object.hasOwn(snapshot.pool.roles, id)) return positionStats.get(id)?.suggested_roles ?? [];
+    return snapshot.effective_pool.roles[id] ?? [];
+  }
   const heroes = snapshot.heroes
     .filter(
       (hero) =>
@@ -26,7 +35,7 @@ export function HeroPool() {
         (!search ||
           hero.localized_name.toLowerCase().includes(search.toLowerCase()) ||
           hero.id.toString() === search) &&
-        (!roleFilter || pool.roles[hero.id]?.includes(roleFilter)),
+        (!roleFilter || effectiveRoles(hero.id).includes(roleFilter)),
     )
     .sort(
       (a, b) =>
@@ -35,6 +44,7 @@ export function HeroPool() {
     );
   const selectedHero = snapshot.heroes.find((hero) => hero.id === selected);
   const selectedStats = selected == null ? null : stats.get(selected);
+  const selectedPosition = selected == null ? null : positionStats.get(selected);
   const compareStats = compare == null ? null : stats.get(compare);
   const dirty = JSON.stringify(pool) !== JSON.stringify(snapshot.pool);
   function include(id: number) {
@@ -56,7 +66,7 @@ export function HeroPool() {
     }));
   }
   function role(id: number, position: number) {
-    const assigned = pool.roles[id] ?? [];
+    const assigned = effectiveRoles(id);
     setPool((previous) => ({
       ...previous,
       roles: {
@@ -66,6 +76,13 @@ export function HeroPool() {
           : [...assigned, position],
       },
     }));
+  }
+  function restoreAutomatic(id: number) {
+    setPool((previous) => {
+      const nextRoles = { ...previous.roles };
+      delete nextRoles[id];
+      return { ...previous, roles: nextRoles };
+    });
   }
   return (
     <div className="page-content">
@@ -117,9 +134,9 @@ export function HeroPool() {
           {pool.mode === 'auto'
             ? '根据真实使用记录筛选，仍可排除不想玩的英雄。'
             : pool.mode === 'manual'
-              ? '仅推荐你手动纳入且已指定位置的英雄。'
+              ? '仅推荐你手动纳入且有可用位置依据的英雄。'
               : '在自动建议中增加或排除英雄。'}
-          位置由你指定，线路数据不等于五位置。
+          默认从个人历史推断位置；可手动覆盖。线路数据不直接等于五位置。
         </p>
         <div className="filter-row">
           <label className="search-field">
@@ -188,9 +205,9 @@ export function HeroPool() {
                               <small>
                                 {excluded
                                   ? '已明确排除'
-                                  : (pool.roles[hero.id] ?? [])
-                                      .map((value) => `${value} 号位`)
-                                      .join(' / ') || '尚未指定位置'}
+                                  : Object.hasOwn(pool.roles, hero.id)
+                                    ? `手动覆盖 · ${positionNames(effectiveRoles(hero.id)) || '不允许任何位置'}`
+                                    : `历史推断 · ${positionNames(effectiveRoles(hero.id)) || '依据不足'}`}
                               </small>
                             </div>
                           </button>
@@ -263,22 +280,56 @@ export function HeroPool() {
                 </p>
               </div>
               <div className="detail-section">
-                <h3>我会使用的位置</h3>
+                <h3>推荐使用的位置</h3>
+                <p className="hint">
+                  {Object.hasOwn(pool.roles, selectedHero.id)
+                    ? '当前使用手动覆盖。'
+                    : '当前使用个人历史推断。'}
+                  点击位置可多选覆盖；清空全部表示此英雄不参与任何位置的推荐。
+                </p>
                 <div className="role-buttons">
                   {roles.map((item) => (
                     <button
                       key={item.value}
                       className={
-                        (pool.roles[selectedHero.id] ?? []).includes(item.value) ? 'selected' : ''
+                        effectiveRoles(selectedHero.id).includes(item.value) ? 'selected' : ''
                       }
-                      aria-pressed={(pool.roles[selectedHero.id] ?? []).includes(item.value)}
+                      aria-pressed={effectiveRoles(selectedHero.id).includes(item.value)}
                       onClick={() => role(selectedHero.id, item.value)}
                     >
                       {item.label}
                     </button>
                   ))}
                 </div>
-                <p className="hint">未指定位置的英雄不会进入该位置推荐。</p>
+                <button
+                  className="text-button"
+                  disabled={!Object.hasOwn(pool.roles, selectedHero.id)}
+                  onClick={() => restoreAutomatic(selectedHero.id)}
+                >
+                  恢复自动推断
+                </button>
+                <p className="hint">
+                  自动建议：{positionNames(selectedPosition?.suggested_roles ?? []) || '依据不足'}。
+                  {selectedPosition
+                    ? `${selectedPosition.matches} 场适用比赛中，${selectedPosition.analyzed_matches} 场有可用位置依据，${selectedPosition.unknown_matches} 场未知；覆盖率 ${percent(selectedPosition.coverage)}。`
+                    : '尚无历史位置记录。'}
+                </p>
+                {Boolean(selectedPosition?.candidates.length) && (
+                  <dl className="stats-list position-evidence">
+                    {selectedPosition?.candidates.map((candidate) => (
+                      <div key={candidate.role}>
+                        <dt>{positionNames([candidate.role])}</dt>
+                        <dd>
+                          {candidate.supporting_matches} 场支持 · {candidate.exclusive_matches}{' '}
+                          场单一候选
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                <p className="hint">
+                  支持样本可同时包含多个位置，不相加作为总场次；推断不是官方位置标签。
+                </p>
               </div>
               <label className="field">
                 <span>个人优先级（-1—1）</span>
@@ -379,7 +430,7 @@ export function HeroPool() {
               </p>
             </>
           ) : (
-            <EmptyState title="选择一位英雄">查看真实统计，设置你愿意使用的位置。</EmptyState>
+            <EmptyState title="选择一位英雄">查看真实统计、位置推断与手动覆盖。</EmptyState>
           )}
         </aside>
       </div>

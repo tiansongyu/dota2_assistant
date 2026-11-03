@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-03T03:04:33.679Z",
+  "date": "2026-11-03T06:35:47.365Z",
   "environment": "Linux Google Chrome headless; real rendered empty UI, no IPC mocks",
   "checks": [
     {
@@ -81,6 +81,7 @@
   "account_validation": true,
   "browser_ipc_failure_visible": true,
   "pool_exclusion": true,
+  "automatic_role_default_and_override_reset": true,
   "settings_validation": true,
   "overlay_empty_layout": true,
   "calibration_export_plumbing": true,

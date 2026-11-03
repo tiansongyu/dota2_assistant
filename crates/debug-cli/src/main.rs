@@ -79,6 +79,18 @@ enum Command {
         #[arg(long)]
         patch: Option<u32>,
     },
+    /// Infer positions from cached same-team evidence; optionally fetch a bounded sample.
+    Roles {
+        #[arg(long)]
+        db: PathBuf,
+        #[arg(long)]
+        account: String,
+        /// Fetch missing match detail evidence; no replay parsing request is submitted.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long, default_value_t = 240, value_parser=clap::value_parser!(u32).range(1..=3000))]
+        max_matches: u32,
+    },
     /// Evaluate historical hero-choice coverage; not counterfactual win-rate improvement.
     Backtest {
         #[arg(long)]
@@ -220,6 +232,51 @@ async fn run(command: Command) -> Result<(Value, bool)> {
             (
                 dpda_debug::statistics(&db, &account, half_life_days, now, patch)?,
                 true,
+            )
+        }
+        Command::Roles {
+            db,
+            account,
+            refresh,
+            max_matches,
+        } => {
+            let account_id = dpda_domain::normalize_account_id(&account)?;
+            let mut database = dpda_debug::existing_database(&db)?;
+            let cancel = Arc::new(AtomicBool::new(false));
+            let signal_cancel = cancel.clone();
+            let signal = tokio::spawn(async move {
+                if tokio::signal::ctrl_c().await.is_ok() {
+                    signal_cancel.store(true, Ordering::Relaxed);
+                }
+            });
+            let progress = if refresh {
+                let client = dpda_data_provider::OpenDotaClient::new()?;
+                Some(
+                    dpda_history::enrich_role_evidence(
+                        &client,
+                        &mut database,
+                        account_id,
+                        max_matches as usize,
+                        &cancel,
+                        |p| eprintln!("{}", json!({"event":"role_evidence_progress","progress":p})),
+                    )
+                    .await?,
+                )
+            } else {
+                None
+            };
+            signal.abort();
+            let analysis = dpda_hero_pool::analyze_roles(
+                &database.records(account_id)?,
+                &database.role_evidence(account_id)?,
+                chrono::Utc::now().timestamp(),
+            );
+            let success = progress
+                .as_ref()
+                .is_none_or(|p| !["failed", "rate_limited"].contains(&p.status.as_str()));
+            (
+                json!({"account_id":account_id,"progress":progress,"position_analysis":analysis}),
+                success,
             )
         }
         Command::Backtest {

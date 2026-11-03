@@ -1,7 +1,7 @@
 //! Headless diagnostic workflows. This crate intentionally has no UI or vision dependency.
 use chrono::{NaiveDate, Utc};
 use dpda_domain::{normalize_account_id, steam64};
-use dpda_hero_pool::{aggregate, automatic_pool, PoolConfig};
+use dpda_hero_pool::{aggregate, analyze_roles, automatic_pool, PoolConfig};
 use dpda_persistence::Database;
 use dpda_recommender::{backtest, ModelConfig};
 use serde_json::{json, Value};
@@ -75,10 +75,11 @@ pub fn statistics(
     let db = existing_database(path)?;
     let rows = db.records(account_id)?;
     let stats = aggregate(&rows, now, half_life_days, patch);
+    let positions = analyze_roles(&rows, &db.role_evidence(account_id)?, now);
     Ok(
         json!({"account_id":account_id,"source_matches":rows.len(),"as_of":now,"current_patch":patch,
-        "half_life_days":half_life_days,"automatic_hero_pool":automatic_pool(&stats),"heroes":stats,
-        "note":"历史统计包含导入范围内比赛；自动英雄池不自动断言五号位体系的位置，推荐前须明确位置。"}),
+        "half_life_days":half_life_days,"automatic_hero_pool":automatic_pool(&stats),"heroes":stats,"position_analysis":positions,
+        "note":"历史统计包含导入范围内比赛；位置由已缓存的队内经济/补刀和分路证据推断，可为多位置或未知，不是已校准概率。"}),
     )
 }
 

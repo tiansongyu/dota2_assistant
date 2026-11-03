@@ -100,8 +100,17 @@ try {
     .click();
   await page.getByRole('button', { name: '混合英雄池', exact: true }).click();
   await page.getByRole('textbox', { name: '搜索英雄' }).fill('Anti-Mage');
-  await page.getByRole('button', { name: 'Anti-Mage 尚未指定位置', exact: true }).click();
+  await page.getByRole('button', { name: 'Anti-Mage 历史推断 · 依据不足', exact: true }).click();
   await page.getByRole('button', { name: '一号位', exact: true }).click();
+  assert.equal(
+    await page.getByRole('button', { name: '一号位', exact: true }).getAttribute('aria-pressed'),
+    'true',
+  );
+  await page.getByRole('button', { name: '恢复自动推断', exact: true }).click();
+  assert.equal(
+    await page.getByRole('button', { name: '一号位', exact: true }).getAttribute('aria-pressed'),
+    'false',
+  );
   await page.getByRole('button', { name: '手动纳入 Anti-Mage', exact: true }).click();
   assert.equal(
     await page
@@ -123,6 +132,10 @@ try {
     'false',
   );
   await page.getByRole('navigation').getByRole('button', { name: '设置', exact: true }).click();
+  assert.equal(
+    await page.getByRole('combobox', { name: '计划位置', exact: true }).inputValue(),
+    '0',
+  );
   await page.getByLabel('时间衰减半衰期（天）').fill('5');
   await page.getByRole('button', { name: '保存设置', exact: true }).click();
   await page.getByText('半衰期必须在 7—1825 天之间。').waitFor();
@@ -164,6 +177,7 @@ try {
   await page.goto(`${base}/?overlay=1`);
   await page.setViewportSize({ width: 360, height: 440 });
   await page.getByText('敌方已确认', { exact: true }).waitFor();
+  await page.getByText('自动位置', { exact: true }).waitFor();
   assert.ok((await page.evaluate(() => document.documentElement.scrollWidth)) <= 360);
   await page.goto(base);
   await page.setViewportSize({ width: 1440, height: 1050 });
@@ -181,6 +195,7 @@ try {
         account_validation: true,
         browser_ipc_failure_visible: true,
         pool_exclusion: true,
+        automatic_role_default_and_override_reset: true,
         settings_validation: true,
         overlay_empty_layout: true,
         calibration_export_plumbing: true,

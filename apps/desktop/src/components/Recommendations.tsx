@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
-import { heroName, percent } from '../services/format';
+import { heroName, percent, positionNames } from '../services/format';
 import { EmptyState, HeroMark } from './common';
 
 export function Recommendations({ compact = false }: { compact?: boolean }) {
@@ -18,6 +18,7 @@ export function Recommendations({ compact = false }: { compact?: boolean }) {
             <div className="recommendation-name">
               <h3>{heroName(snapshot.heroes, item.hero_id)}</h3>
               <span>{item.confidence}</span>
+              <small>{positionNames(item.role_candidates)}</small>
             </div>
             <div className="score">
               <strong>{item.score.toFixed(1)}</strong>
@@ -52,7 +53,7 @@ export function Recommendations({ compact = false }: { compact?: boolean }) {
     </div>
   ) : (
     <EmptyState title="等待可用的推荐依据" icon="draft">
-      同步个人战绩，在英雄池中指定位置，再确认当前已锁定阵容。可推荐英雄不足时会按实际数量显示。
+      同步个人战绩后自动分析有依据的位置，也可在英雄池中手动覆盖。确认当前已锁定阵容后查看推荐；样本不足时按实际数量显示。
     </EmptyState>
   );
 }

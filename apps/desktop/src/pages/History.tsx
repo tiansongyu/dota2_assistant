@@ -12,6 +12,11 @@ export function History() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+  const positions = useMemo(
+    () => new Map(snapshot.position_analysis.matches.map((item) => [item.match_id, item])),
+    [snapshot.position_analysis.matches],
+  );
   const patches = [
     ...new Set(snapshot.matches.flatMap((match) => (match.patch == null ? [] : [match.patch]))),
   ].sort((a, b) => b - a);
@@ -20,12 +25,16 @@ export function History() {
       snapshot.matches.filter(
         (match) =>
           (!hero || match.hero_id === hero) &&
-          (!role || snapshot.pool.roles[match.hero_id]?.includes(role)) &&
+          (!role ||
+            (role === -1
+              ? !positions.get(match.match_id)?.qualifying_evidence
+              : positions.get(match.match_id)?.qualifying_evidence &&
+                positions.get(match.match_id)?.candidates.includes(role))) &&
           (!patch || match.patch === patch) &&
           (!from || match.start_time >= (dateStart(from) ?? 0)) &&
           (!to || match.start_time <= (dateEnd(to) ?? Infinity)),
       ),
-    [snapshot.matches, snapshot.pool.roles, hero, role, patch, from, to],
+    [snapshot.matches, positions, hero, role, patch, from, to],
   );
   const known = filtered.filter((match) => won(match) !== null);
   const wins = known.filter((match) => won(match)).length;
@@ -41,7 +50,7 @@ export function History() {
   const trend = [...months.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-12);
   const usages = new Map<number, number>();
   for (const match of filtered) usages.set(match.hero_id, (usages.get(match.hero_id) ?? 0) + 1);
-  const pageCount = Math.max(1, Math.ceil(filtered.length / 50));
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pageCount - 1);
   return (
     <div className="page-content">
@@ -76,7 +85,7 @@ export function History() {
             </select>
           </label>
           <label className="field">
-            <span>英雄池位置</span>
+            <span>本场位置推断</span>
             <select
               value={role}
               onChange={(event) => {
@@ -85,6 +94,7 @@ export function History() {
               }}
             >
               <option value={0}>全部位置</option>
+              <option value={-1}>未知 / 依据不足</option>
               {roles.map((item) => (
                 <option key={item.value} value={item.value}>
                   {item.label}
@@ -146,7 +156,7 @@ export function History() {
           </button>
         </div>
         <p className="hint padded-hint">
-          位置筛选使用你为英雄手动指定的位置，不表示该场比赛实际担任的位置。缺失指标保留为空。
+          位置筛选依据每场比赛的规则推断，候选位置可能重叠；未知保留为未知。手动英雄池位置不会改写历史比赛。缺失指标保留为空。
         </p>
       </section>
       <div className="metric-grid">
@@ -236,9 +246,26 @@ export function History() {
           <>
             <MatchTable
               heroes={snapshot.heroes}
-              matches={filtered.slice(safePage * 50, (safePage + 1) * 50)}
+              matches={filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)}
+              positions={positions}
             />
             <div className="pagination">
+              <label className="field inline-field">
+                <span>每页</span>
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value));
+                    setPage(0);
+                  }}
+                >
+                  {[25, 50, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size} 场
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 className="button"
                 disabled={safePage === 0}
@@ -247,9 +274,20 @@ export function History() {
                 <ChevronLeft size={16} aria-hidden="true" />
                 上一页
               </button>
-              <span>
-                {safePage + 1} / {pageCount}
-              </span>
+              <label className="field inline-field pagination-jump">
+                <span>页码</span>
+                <select
+                  aria-label="跳转到页码"
+                  value={safePage}
+                  onChange={(event) => setPage(Number(event.target.value))}
+                >
+                  {Array.from({ length: pageCount }, (_, index) => (
+                    <option key={index} value={index}>
+                      {index + 1} / {pageCount}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 className="button"
                 disabled={safePage + 1 >= pageCount}
@@ -258,6 +296,10 @@ export function History() {
                 下一页
                 <ChevronRight size={16} aria-hidden="true" />
               </button>
+              <span className="pagination-range">
+                第 {safePage * pageSize + 1}—{Math.min((safePage + 1) * pageSize, filtered.length)}{' '}
+                场 / {filtered.length} 场
+              </span>
             </div>
           </>
         ) : (

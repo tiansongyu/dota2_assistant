@@ -79,7 +79,9 @@ function Overlay() {
         <Swords size={18} aria-hidden="true" />
         <strong data-tauri-drag-region>DPDA</strong>
         <span data-tauri-drag-region>
-          {roles.find((role) => role.value === snapshot.settings.selected_role)?.label}
+          {snapshot.settings.selected_role === 0
+            ? '自动位置'
+            : roles.find((role) => role.value === snapshot.settings.selected_role)?.label}
         </span>
         <button
           className="icon-button"

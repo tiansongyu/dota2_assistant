@@ -85,7 +85,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             theme: "dark".into(),
-            selected_role: 2,
+            selected_role: 0,
             half_life_days: 180.0,
             top_k: 5,
             weights: Weights::default(),
@@ -100,14 +100,14 @@ impl Default for AppSettings {
 impl AppSettings {
     pub fn validate(&self) -> Result<(), String> {
         if !["dark", "light"].contains(&self.theme.as_str())
-            || !(1..=5).contains(&self.selected_role)
+            || self.selected_role > 5
             || !(7.0..=1825.0).contains(&self.half_life_days)
             || !(3..=5).contains(&self.top_k)
             || !self.weights.validate()
             || !(0.3..=1.0).contains(&self.overlay_opacity)
             || !(0.1..=4.0).contains(&self.capture_hz)
         {
-            return Err("设置超出有效范围：位置 1—5、Top 3—5、半衰期 7—1825 天、采样 0.1—4 Hz、透明度 0.3—1".into());
+            return Err("设置超出有效范围：位置 0（自动）或 1—5、Top 3—5、半衰期 7—1825 天、采样 0.1—4 Hz、透明度 0.3—1".into());
         }
         if !self.calibration_json.trim().is_empty() {
             let p: CalibrationFiles = serde_json::from_str(&self.calibration_json)

@@ -1,6 +1,6 @@
 //! Public historical data only. No live game state or opponent profile queries.
 use chrono::Utc;
-use dpda_domain::{Hero, MatchRecord};
+use dpda_domain::{Hero, MatchRecord, MatchRoleEvidence, PlayerRoleEvidence};
 use reqwest::{header::HeaderMap, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -263,6 +263,116 @@ impl OpenDotaClient {
         }
         Ok(heroes)
     }
+
+    /// Fetch only a known personal match; persist sanitized same-team role evidence.
+    pub async fn role_evidence(
+        &self,
+        record: &MatchRecord,
+    ) -> Result<MatchRoleEvidence, ProviderError> {
+        if record
+            .match_id
+            .parse::<u64>()
+            .ok()
+            .filter(|id| *id > 0)
+            .is_none()
+        {
+            return Err(ProviderError::InvalidConfiguration("比赛 ID 无效".into()));
+        }
+        let url = self
+            .base
+            .join(&format!("matches/{}", record.match_id))
+            .map_err(|e| ProviderError::InvalidConfiguration(e.to_string()))?;
+        let (value, _) = self.request(url).await?;
+        parse_role_evidence(&value, record, Utc::now().timestamp())
+    }
+}
+
+/// Retains no teammate account IDs, names, chat, inventories, or raw response JSON.
+pub fn parse_role_evidence(
+    value: &serde_json::Value,
+    record: &MatchRecord,
+    fetched_at: i64,
+) -> Result<MatchRoleEvidence, ProviderError> {
+    let invalid = |message: &str| ProviderError::InvalidData(message.into());
+    if value["match_id"]
+        .as_u64()
+        .map(|id| id.to_string())
+        .as_deref()
+        != Some(record.match_id.as_str())
+    {
+        return Err(invalid("比赛详情 ID 与个人历史不一致"));
+    }
+    let slot = record
+        .player_slot
+        .filter(|s| *s <= 4 || (128..=132).contains(s))
+        .ok_or_else(|| invalid("个人历史缺少有效 player_slot，不能定位本队"))?;
+    let rows = value["players"]
+        .as_array()
+        .ok_or_else(|| invalid("详情缺少 players"))?;
+    let integer = |v: &serde_json::Value| v.as_u64().and_then(|n| u32::try_from(n).ok());
+    let early = |v: &serde_json::Value| -> Option<f64> {
+        let array = v.as_array()?;
+        let mut sum = 0.0;
+        for minute in 10..=12 {
+            let number = array.get(minute)?.as_f64()?;
+            if !number.is_finite() || number < 0.0 {
+                return None;
+            }
+            sum += number / 3.0;
+        }
+        sum.is_finite().then_some(sum)
+    };
+    let mut players = Vec::new();
+    let mut seen = BTreeSet::new();
+    for row in rows {
+        let Some(player_slot) = integer(&row["player_slot"]).and_then(|n| u8::try_from(n).ok())
+        else {
+            return Err(invalid("详情含无效 player_slot"));
+        };
+        if !(player_slot <= 4 || (128..=132).contains(&player_slot)) || !seen.insert(player_slot) {
+            return Err(invalid("详情槽位无效或重复"));
+        }
+        if (player_slot < 128) != (slot < 128) {
+            continue;
+        }
+        let hero_id = integer(&row["hero_id"])
+            .filter(|id| *id > 0)
+            .ok_or_else(|| invalid("详情缺少英雄 ID"))?;
+        if player_slot == slot && hero_id != record.hero_id {
+            return Err(invalid("详情英雄与个人历史不一致"));
+        }
+        // If the provider exposes the target ID, it must match; no other identities are retained.
+        if player_slot == slot
+            && !row["account_id"].is_null()
+            && integer(&row["account_id"]) != Some(record.account_id)
+        {
+            return Err(invalid("详情中的目标账号与个人历史不一致或无效"));
+        }
+        players.push(PlayerRoleEvidence {
+            player_slot,
+            hero_id,
+            lane_role: integer(&row["lane_role"])
+                .and_then(|n| u8::try_from(n).ok())
+                .filter(|n| (1..=4).contains(n)),
+            gold_per_min: integer(&row["gold_per_min"]),
+            last_hits: integer(&row["last_hits"]),
+            early_gold: early(&row["gold_t"]),
+            early_last_hits: early(&row["lh_t"]),
+            position_est: integer(&row["position_est"])
+                .and_then(|n| u8::try_from(n).ok())
+                .filter(|n| (1..=5).contains(n)),
+        });
+    }
+    if players.len() != 5 || !players.iter().any(|p| p.player_slot == slot) {
+        return Err(invalid("详情没有完整的本队五个槽位"));
+    }
+    Ok(MatchRoleEvidence {
+        account_id: record.account_id,
+        match_id: record.match_id.clone(),
+        source: "opendota_match_details".into(),
+        fetched_at,
+        players,
+    })
 }
 
 fn header_number(headers: &HeaderMap, key: &str) -> Option<u32> {
@@ -410,6 +520,168 @@ fn parse_record(
 }
 fn valid_slot(slot: u8) -> bool {
     slot <= 4 || (128..=132).contains(&slot)
+}
+
+#[cfg(test)]
+mod role_evidence_tests {
+    use super::*;
+    use serde_json::{json, Value};
+
+    // Explicitly synthetic transport fixtures, not a user's match or accuracy dataset.
+    fn input() -> (MatchRecord, Value) {
+        let record = MatchRecord {
+            account_id: 42,
+            match_id: "123456789".into(),
+            hero_id: 3,
+            player_slot: Some(2),
+            ..Default::default()
+        };
+        let players: Vec<_> = (0u32..10)
+            .map(|i| {
+                let slot = if i < 5 { i } else { i + 123 };
+                let account = if i == 2 { 42 } else { 900_000 + i };
+                json!({
+                    "player_slot":slot,"hero_id":i+1,"account_id":account,
+                    "personaname":format!("synthetic-private-name-{i}"),
+                    "profileurl":"https://example.invalid/private-player",
+                    "lane_role":if i==2 {2}else{1},"gold_per_min":500,"last_hits":200,
+                    "gold_t":[0,10,20,30,40,50,60,70,80,90,3000,3300,3600],
+                    "lh_t":[0,1,2,3,4,5,6,7,8,9,30,33,36],"position_est":2
+                })
+            })
+            .collect();
+        (record, json!({"match_id":123456789,"players":players}))
+    }
+
+    #[test]
+    fn sanitized_evidence_retains_only_own_team_and_no_player_identities() {
+        let (record, value) = input();
+        let evidence = parse_role_evidence(&value, &record, 1234).unwrap();
+        assert_eq!(evidence.account_id, 42);
+        assert_eq!(evidence.fetched_at, 1234);
+        assert_eq!(evidence.players.len(), 5);
+        assert!(evidence.players.iter().all(|p| p.player_slot <= 4));
+        assert_eq!(evidence.players[2].early_gold, Some(3300.0));
+        assert_eq!(evidence.players[2].early_last_hits, Some(33.0));
+        let serialized = serde_json::to_value(&evidence).unwrap();
+        for player in serialized["players"].as_array().unwrap() {
+            assert!(player.get("account_id").is_none());
+            assert!(player.get("personaname").is_none());
+            assert!(player.get("profileurl").is_none());
+        }
+        let text = serialized.to_string();
+        assert!(!text.contains("90000"));
+        assert!(!text.contains("private"));
+    }
+
+    #[test]
+    fn dire_target_keeps_only_the_five_dire_slots() {
+        let (mut record, mut value) = input();
+        record.player_slot = Some(130);
+        record.hero_id = 8;
+        value["players"][7]["account_id"] = json!(42);
+        let evidence = parse_role_evidence(&value, &record, 1234).unwrap();
+        assert_eq!(evidence.players.len(), 5);
+        assert!(evidence
+            .players
+            .iter()
+            .all(|p| (128..=132).contains(&p.player_slot)));
+        value["players"] = Value::Array(value["players"].as_array().unwrap()[5..].to_vec());
+        assert_eq!(
+            parse_role_evidence(&value, &record, 1234)
+                .unwrap()
+                .players
+                .len(),
+            5
+        );
+    }
+
+    #[test]
+    fn target_match_hero_and_account_mismatches_are_rejected() {
+        let (record, value) = input();
+        for (field, wrong) in [("hero_id", json!(99)), ("account_id", json!(99))] {
+            let mut invalid = value.clone();
+            invalid["players"][2][field] = wrong;
+            assert!(matches!(
+                parse_role_evidence(&invalid, &record, 1234),
+                Err(ProviderError::InvalidData(_))
+            ));
+        }
+        let mut invalid = value.clone();
+        invalid["match_id"] = json!(123456788);
+        assert!(parse_role_evidence(&invalid, &record, 1234).is_err());
+        let mut anonymous = value;
+        anonymous["players"][2]["account_id"] = Value::Null;
+        assert!(parse_role_evidence(&anonymous, &record, 1234).is_ok());
+    }
+
+    #[test]
+    fn invalid_duplicate_and_incomplete_slots_cannot_form_a_team() {
+        let (record, value) = input();
+        for bad_slot in [json!(2), json!(5), json!(256), json!(-1), Value::Null] {
+            let mut invalid = value.clone();
+            invalid["players"][1]["player_slot"] = bad_slot;
+            assert!(parse_role_evidence(&invalid, &record, 1234).is_err());
+        }
+        let mut missing = value.clone();
+        missing["players"].as_array_mut().unwrap().remove(0);
+        assert!(parse_role_evidence(&missing, &record, 1234).is_err());
+        let mut invalid_record = record;
+        invalid_record.player_slot = None;
+        assert!(parse_role_evidence(&value, &invalid_record, 1234).is_err());
+    }
+
+    #[test]
+    fn absent_short_null_and_negative_early_data_remain_missing() {
+        let (record, value) = input();
+        for bad in [
+            Value::Null,
+            json!([0, 1, 2]),
+            json!([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, null, 12]),
+            json!([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, 11, 12]),
+        ] {
+            let mut partial = value.clone();
+            partial["players"][2]["gold_t"] = bad.clone();
+            partial["players"][2]["lh_t"] = bad;
+            let evidence = parse_role_evidence(&partial, &record, 1234).unwrap();
+            assert_eq!(evidence.players[2].early_gold, None);
+            assert_eq!(evidence.players[2].early_last_hits, None);
+            assert_eq!(evidence.players[2].gold_per_min, Some(500));
+        }
+        let mut missing = value;
+        missing["players"][2]
+            .as_object_mut()
+            .unwrap()
+            .remove("gold_t");
+        missing["players"][2]["gold_per_min"] = Value::Null;
+        missing["players"][2]["last_hits"] = Value::Null;
+        let evidence = parse_role_evidence(&missing, &record, 1234).unwrap();
+        assert_eq!(evidence.players[2].early_gold, None);
+        assert_eq!(evidence.players[2].gold_per_min, None);
+        assert_eq!(evidence.players[2].last_hits, None);
+    }
+
+    #[test]
+    fn malformed_exposed_target_identity_is_not_treated_as_anonymous() {
+        let (record, value) = input();
+        for bad in [json!("42"), json!(-1), json!(4_294_967_296u64), json!(true)] {
+            let mut invalid = value.clone();
+            invalid["players"][2]["account_id"] = bad;
+            assert!(parse_role_evidence(&invalid, &record, 1234).is_err());
+        }
+    }
+
+    #[test]
+    fn finite_early_values_do_not_overflow_the_mean() {
+        let (record, mut value) = input();
+        for minute in 10..=12 {
+            value["players"][2]["gold_t"][minute] = json!(1e308);
+        }
+        let evidence = parse_role_evidence(&value, &record, 1234).unwrap();
+        let mean = evidence.players[2].early_gold.unwrap();
+        assert!(mean.is_finite());
+        assert!((mean / 1e308 - 1.0).abs() < 1e-12);
+    }
 }
 
 #[cfg(test)]

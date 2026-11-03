@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { action } from '../stores/app-store';
 import { AccountSetup } from '../components/AccountSetup';
 import { Calibration } from '../components/Calibration';
+import { RoleSelect } from '../components/common';
 import { decimal } from '../services/format';
 import type { AppSettings } from '../types';
 
@@ -72,6 +73,11 @@ export function Settings() {
         <section className="panel settings-panel">
           <h2>推荐参数</h2>
           <p>工程初始权重可调整；当前评分不代表获胜概率。</p>
+          <RoleSelect
+            value={settings.selected_role}
+            onChange={(selected_role) => patch({ selected_role })}
+          />
+          <p className="hint">自动模式使用历史推断的位置；明确选择一个位置后优先使用你的选择。</p>
           <div className="form-grid">
             <label className="field">
               <span>时间衰减半衰期（天）</span>

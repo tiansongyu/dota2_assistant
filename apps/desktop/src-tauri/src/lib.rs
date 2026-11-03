@@ -1,13 +1,13 @@
 mod models;
 use dpda_domain::{normalize_account_id, steam64, Hero};
 use dpda_draft_state::{DraftTracker, RecognitionState};
-use dpda_hero_pool::{aggregate, automatic_pool, PoolConfig};
+use dpda_hero_pool::{aggregate, analyze_roles, automatic_pool, PoolConfig};
 use dpda_persistence::Database;
 use dpda_recommender::{recommend, ModelConfig};
 use models::*;
 use serde_json::{json, Value};
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -66,25 +66,50 @@ async fn get_snapshot(state: State<'_, AppState>) -> Result<Value, String> {
     let path = state.path.clone();
     let runtime = state.runtime.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let database=Database::open(path).map_err(error)?;
-        let profile=profile(&database)?;let settings=settings(&database)?;
-        let records=if let Some(p)=&profile {database.records(p.account_id).map_err(error)?}else{vec![]};
-        let pool:PoolConfig=if let Some(p)=&profile {database.setting(&pool_key(p.account_id)).map_err(error)?.unwrap_or_default()}else{PoolConfig::default()};
-        let now=chrono::Utc::now().timestamp();
-        let stats=aggregate(&records,now,settings.half_life_days,None);
-        let (draft,mut capture)={let rt=runtime.lock().map_err(error)?;(rt.draft.clone(),rt.capture.clone())};
+        let database = Database::open(path).map_err(error)?;
+        let profile = profile(&database)?;
+        let settings = settings(&database)?;
+        let records = if let Some(p) = &profile { database.records(p.account_id).map_err(error)? } else { vec![] };
+        let pool: PoolConfig = if let Some(p) = &profile { database.setting(&pool_key(p.account_id)).map_err(error)?.unwrap_or_default() } else { PoolConfig::default() };
+        let details = if let Some(p) = &profile { database.role_evidence(p.account_id).map_err(error)? } else {vec![]};
+        let now = chrono::Utc::now().timestamp();
+        let position_analysis = analyze_roles(&records, &details, now);
+        let mut effective_pool = pool.clone();
+        for hero in &position_analysis.heroes {
+            effective_pool.roles.entry(hero.hero_id.to_string()).or_insert_with(||hero.suggested_roles.clone());
+        }
+        let stats = aggregate(&records,now,settings.half_life_days,None);
+        let (draft,mut capture) = {let rt=runtime.lock().map_err(error)?;(rt.draft.clone(),rt.capture.clone())};
         let recommendation_records = dpda_recommender::eligible_records(&records, now);
         let recommendation_stats = aggregate(&recommendation_records, now, settings.half_life_days, None);
         let automatic_pool = automatic_pool(&recommendation_stats);
-        let context = draft.context(settings.selected_role);
-        let pool_candidates: Vec<_> = pool.candidates(&recommendation_stats, settings.selected_role).into_iter()
-            .filter(|id| !context.allies.contains(id) && !context.enemies.contains(id) && !context.banned.contains(id)).collect();
+        let considered_roles:Vec<u8> = if settings.selected_role==0 {(1..=5).collect()} else {vec![settings.selected_role]};
+        let mut pool_candidates=BTreeSet::new();
+        let mut ranked:BTreeMap<u32,dpda_recommender::Recommendation>=BTreeMap::new();
         let started=Instant::now();
-        let recommendations=recommend(&records,&stats,&pool,&draft.context(settings.selected_role),&ModelConfig{weights:settings.weights,half_life_days:settings.half_life_days,top_k:settings.top_k,current_patch:None},now);
+        for role in &considered_roles {
+            let context=draft.context(*role);
+            pool_candidates.extend(effective_pool.candidates(&recommendation_stats,*role).into_iter()
+                .filter(|id|!context.allies.contains(id)&&!context.enemies.contains(id)&&!context.banned.contains(id)));
+            let results=recommend(&records,&stats,&effective_pool,&context,&ModelConfig{weights:settings.weights,half_life_days:settings.half_life_days,top_k:settings.top_k,current_patch:None},now);
+            for result in results {
+                if ranked.get(&result.hero_id).is_none_or(|old|old.score<result.score) {ranked.insert(result.hero_id,result);}
+            }
+        }
+        let mut recommendations:Vec<_>=ranked.into_values().collect();
+        recommendations.sort_by(|a,b| b.score.total_cmp(&a.score).then(a.hero_id.cmp(&b.hero_id)));
+        recommendations.truncate(settings.top_k);
+        let recommendations:Vec<Value>=recommendations.into_iter().map(|r| {
+            let roles:Vec<u8>=effective_pool.roles.get(&r.hero_id.to_string()).cloned().unwrap_or_default().into_iter().filter(|role|considered_roles.contains(role)).collect();
+            let mut value=serde_json::to_value(r).map_err(error)?;
+            value["role_candidates"]=json!(roles);
+            Ok(value)
+        }).collect::<Result<_,String>>()?;
         capture.recommendation_ms=Some(started.elapsed().as_secs_f64()*1000.0);
         let sync=if let Some(p)=&profile {database.checkpoint(p.account_id).map_err(error)?}else{None};
         let sync=match sync {Some(p)=>serde_json::to_value(p).map_err(error)?,None=>json!({"account_id":profile.as_ref().map(|p|p.account_id),"status":"idle","offset":0,"pages_fetched":0,"imported":0,"updated":0,"failed":0,"missing_lineups":0,"from_time":null,"to_time":null,"last_synced_at":null,"error":null})};
-        Ok(json!({"schema_version":1,"automatic_pool":automatic_pool,"pool_candidates":pool_candidates,"profile":profile,"heroes":heroes()?,"hero_stats":stats,"matches":records,"pool":pool,"draft":draft,
+        let role_sync:Option<dpda_history::RoleSyncProgress>=if let Some(p)=&profile {database.setting(&format!("role_sync:{}",p.account_id)).map_err(error)?} else {None};
+        Ok(json!({"schema_version":1,"automatic_pool":automatic_pool,"pool_candidates":pool_candidates,"profile":profile,"heroes":heroes()?,"hero_stats":stats,"matches":records,"pool":pool,"effective_pool":effective_pool,"position_analysis":position_analysis,"role_sync":role_sync,"draft":draft,
             "recommendations":recommendations,"sync":sync,"capture":capture,"settings":settings,"data_updated_at":records.iter().map(|m|m.fetched_at).max()}))
     }).await.map_err(error)?
 }
@@ -149,6 +174,22 @@ async fn start_sync(
             |_| emit(&app),
         )
         .await;
+        if result.as_ref().is_ok_and(|p| p.status == "completed") && !cancel.load(Ordering::SeqCst)
+        {
+            if let Err(e) = dpda_history::enrich_role_evidence(
+                &client,
+                &mut worker_db,
+                profile.account_id,
+                120,
+                &cancel,
+                |_| emit(&app),
+            )
+            .await
+            {
+                tracing::warn!(error=%e,"automatic role evidence collection failed");
+                let _ = app.emit("dpda://error", e.to_string());
+            }
+        }
         if let Err(e) = result {
             tracing::error!(error=%e,"history sync failed");
             let _ = app.emit("dpda://error", e.to_string());
@@ -161,6 +202,40 @@ async fn start_sync(
 #[tauri::command]
 fn pause_sync(state: State<'_, AppState>) {
     state.sync_cancel.store(true, Ordering::SeqCst);
+}
+#[tauri::command]
+async fn start_role_analysis(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    let mut database = db(&state)?;
+    let profile = profile(&database)?.ok_or("请先设置公开账号并导入历史")?;
+    let client = dpda_data_provider::OpenDotaClient::new().map_err(error)?;
+    state
+        .sync_running
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .map_err(|_| "数据同步已经运行".to_string())?;
+    state.sync_cancel.store(false, Ordering::SeqCst);
+    let cancel = state.sync_cancel.clone();
+    let running = state.sync_running.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = dpda_history::enrich_role_evidence(
+            &client,
+            &mut database,
+            profile.account_id,
+            240,
+            &cancel,
+            |_| emit(&app),
+        )
+        .await
+        {
+            tracing::warn!(error=%e,"role evidence collection failed");
+            let _ = app.emit("dpda://error", e.to_string());
+        }
+        running.store(false, Ordering::SeqCst);
+        emit(&app);
+    });
+    Ok(())
 }
 #[tauri::command]
 fn save_pool(
@@ -522,6 +597,17 @@ pub fn run() {
                                 database.save_checkpoint(&p)?;
                             }
                         }
+                        let key = format!("role_sync:{account}");
+                        if let Some(mut p) =
+                            database.setting::<dpda_history::RoleSyncProgress>(&key)?
+                        {
+                            if p.status == "running" {
+                                p.status = "paused".into();
+                                p.error =
+                                    Some("上次详情采集进程已结束，可继续补充缺少的记录".into());
+                                database.set_setting(&key, &p)?;
+                            }
+                        }
                     }
                 }
                 Err(e) => {
@@ -548,6 +634,7 @@ pub fn run() {
             save_account,
             start_sync,
             pause_sync,
+            start_role_analysis,
             save_pool,
             update_draft,
             save_settings,

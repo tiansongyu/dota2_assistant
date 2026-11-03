@@ -3,6 +3,7 @@ import { useApp } from '../hooks/useApp';
 import { AccountSetup } from '../components/AccountSetup';
 import { EmptyState, HeroMark, MatchTable, Metric } from '../components/common';
 import { SyncPanel } from '../components/SyncPanel';
+import { PositionSummary } from '../components/PositionSummary';
 import { percent, heroName, date } from '../services/format';
 import type { Page } from '../types';
 
@@ -49,6 +50,7 @@ export function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
         />
       </div>
       <SyncPanel />
+      <PositionSummary analysis={snapshot.position_analysis} />
       <div className="dashboard-grid">
         <section className="panel">
           <div className="panel-header">

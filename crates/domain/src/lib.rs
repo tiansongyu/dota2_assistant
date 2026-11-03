@@ -1,6 +1,9 @@
 //! Shared domain values. IDs remain stable across data providers and IPC.
 use serde::{Deserialize, Serialize};
 
+mod roles;
+pub use roles::{MatchRoleEvidence, PlayerRoleEvidence};
+
 pub type HeroId = u32;
 const STEAM64_BASE: u64 = 76_561_197_960_265_728;
 

@@ -1,8 +1,10 @@
 //! Resumable, idempotent historical imports; no network access during a draft.
+mod role_enrichment;
 use chrono::Utc;
 use dpda_data_provider::{OpenDotaClient, PlayerPage, ProviderError};
 pub use dpda_persistence::SyncProgress;
 use dpda_persistence::{Database, PersistenceError};
+pub use role_enrichment::{enrich_role_evidence, role_sample, RoleSyncProgress};
 use serde::{Deserialize, Serialize};
 use std::{
     future::Future,

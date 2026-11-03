@@ -62,7 +62,7 @@ export interface PoolConfig {
   mode: 'auto' | 'manual' | 'hybrid';
   included: number[];
   excluded: number[];
-  /** User-assigned five-position roles, NOT provider lane_role labels. */
+  /** Overrides: absent key uses history inference; [] explicitly permits no positions. */
   roles: Record<string, number[]>;
   priorities: Record<string, number>;
 }
@@ -79,6 +79,56 @@ export interface Recommendation {
   confidence: string;
   reasons: string[];
   personal_win_rate: number | null;
+  role_candidates: number[];
+}
+export interface RoleSupport {
+  role: number;
+  supporting_matches: number;
+  exclusive_matches: number;
+  early_matches: number;
+  late_matches: number;
+}
+export interface HeroRoleAnalysis {
+  hero_id: number;
+  matches: number;
+  analyzed_matches: number;
+  unknown_matches: number;
+  lane_only_matches: number;
+  coverage: number;
+  candidates: RoleSupport[];
+  suggested_roles: number[];
+}
+export interface MatchRoleInference {
+  match_id: string;
+  hero_id: number;
+  start_time: number;
+  candidates: number[];
+  strength: 'unknown' | 'limited' | 'moderate';
+  method: string;
+  qualifying_evidence: boolean;
+  reasons: string[];
+}
+export interface RoleAnalysis {
+  rule_version: string;
+  account_id: number | null;
+  total_matches: number;
+  eligible_matches: number;
+  detail_matches: number;
+  analyzed_matches: number;
+  unknown_matches: number;
+  heroes: HeroRoleAnalysis[];
+  matches: MatchRoleInference[];
+  warnings: string[];
+}
+export interface RoleSyncProgress {
+  account_id: number;
+  status: string;
+  eligible_matches: number;
+  cached_matches: number;
+  fetched: number;
+  failed: number;
+  request_budget: number;
+  error: string | null;
 }
 export interface Profile {
   account_id: number;
@@ -129,6 +179,9 @@ export interface AppSnapshot {
   pool_candidates: number[];
   matches: MatchRecord[];
   pool: PoolConfig;
+  effective_pool: PoolConfig;
+  position_analysis: RoleAnalysis;
+  role_sync: RoleSyncProgress | null;
   draft: Draft;
   recommendations: Recommendation[];
   sync: SyncProgress;

@@ -1,11 +1,11 @@
 //! Local storage with transactional migrations. Missing data remains SQL NULL.
 use chrono::Utc;
-use dpda_domain::{steam64, MatchRecord};
+use dpda_domain::{steam64, MatchRecord, MatchRoleEvidence};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::HashMap, path::Path, time::Duration};
 
-const SCHEMA_VERSION: u32 = 1;
+const SCHEMA_VERSION: u32 = 2;
 const MATCH_COLUMNS: &str = "match_id,account_id,hero_id,start_time,duration,game_mode,patch,player_slot,radiant_win,kills,deaths,assists,last_hits,denies,gold_per_min,xp_per_min,lane_role,lineup_complete,source,fetched_at";
 
 #[derive(Debug, thiserror::Error)]
@@ -75,7 +75,13 @@ impl Database {
         if version < 1 {
             let transaction = connection.transaction()?;
             transaction.execute_batch(include_str!("../migrations/001_initial.sql"))?;
-            transaction.pragma_update(None, "user_version", SCHEMA_VERSION)?;
+            transaction.pragma_update(None, "user_version", 1)?;
+            transaction.commit()?;
+        }
+        if version < 2 {
+            let transaction = connection.transaction()?;
+            transaction.execute_batch(include_str!("../migrations/002_role_evidence.sql"))?;
+            transaction.pragma_update(None, "user_version", 2)?;
             transaction.commit()?;
         }
         Ok(Self { connection })
@@ -138,6 +144,24 @@ impl Database {
             [account_id],
             |row| read_count(row, 0),
         )?)
+    }
+    pub fn role_evidence(&self, account_id: u32) -> Result<Vec<MatchRoleEvidence>> {
+        let mut query = self.connection.prepare(
+            "SELECT evidence_json FROM role_evidence WHERE account_id=?1 ORDER BY match_id",
+        )?;
+        let rows = query
+            .query_map([account_id], |row| row.get::<_, String>(0))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        rows.into_iter()
+            .map(|row| Ok(serde_json::from_str(&row)?))
+            .collect()
+    }
+    pub fn save_role_evidence(&self, evidence: &MatchRoleEvidence) -> Result<()> {
+        self.connection.execute(
+            "INSERT INTO role_evidence(account_id,match_id,evidence_json,fetched_at) VALUES(?1,?2,?3,?4) ON CONFLICT(account_id,match_id) DO UPDATE SET evidence_json=excluded.evidence_json,fetched_at=excluded.fetched_at",
+            params![evidence.account_id,evidence.match_id,serde_json::to_string(evidence)?,evidence.fetched_at],
+        )?;
+        Ok(())
     }
     pub fn missing_lineups(&self, account_id: u32) -> Result<u64> {
         Ok(self.connection.query_row(
@@ -394,13 +418,42 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("db.sqlite");
         let mut db = Database::open(&path).unwrap();
-        assert_eq!(db.schema_version().unwrap(), 1);
+        assert_eq!(db.schema_version().unwrap(), 2);
         assert_eq!(db.upsert_records(&[record()]).unwrap().inserted, 1);
         drop(db);
         let db = Database::open(&path).unwrap();
         let records = db.records(1).unwrap();
         assert_eq!(records[0].match_id, "9007199254740993");
         assert_eq!(records[0].kills, None);
+    }
+    #[test]
+    fn schema_one_upgrades_without_losing_history_and_scopes_role_cache() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("v1.sqlite");
+        let connection = Connection::open(&path).unwrap();
+        connection
+            .execute_batch(include_str!("../migrations/001_initial.sql"))
+            .unwrap();
+        connection.pragma_update(None, "user_version", 1).unwrap();
+        ensure_profile(&connection, 1).unwrap();
+        upsert_records(&connection, &[record()]).unwrap();
+        drop(connection);
+        let database = Database::open(&path).unwrap();
+        assert_eq!(database.schema_version().unwrap(), 2);
+        assert_eq!(database.records(1).unwrap(), vec![record()]);
+        let evidence = MatchRoleEvidence {
+            account_id: 1,
+            match_id: record().match_id,
+            source: "synthetic".into(),
+            fetched_at: 200,
+            players: vec![],
+        };
+        database.save_role_evidence(&evidence).unwrap();
+        assert_eq!(database.role_evidence(1).unwrap(), vec![evidence.clone()]);
+        assert!(database.role_evidence(2).unwrap().is_empty());
+        let mut invalid = evidence;
+        invalid.account_id = 2;
+        assert!(database.save_role_evidence(&invalid).is_err());
     }
     #[test]
     fn duplicates_and_missing_refreshes_do_not_destroy_facts() {
@@ -430,7 +483,7 @@ mod tests {
             Some("dark")
         );
         let connection = Connection::open_in_memory().unwrap();
-        connection.pragma_update(None, "user_version", 2).unwrap();
+        connection.pragma_update(None, "user_version", 3).unwrap();
         assert!(matches!(
             Database::from_connection(connection),
             Err(PersistenceError::FutureSchema { .. })

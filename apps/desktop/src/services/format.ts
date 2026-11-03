@@ -7,6 +7,10 @@ export const roles = [
   { value: 4, label: '四号位', short: '辅助' },
   { value: 5, label: '五号位', short: '辅助' },
 ];
+export const positionNames = (positions: number[]) =>
+  positions
+    .map((position) => roles.find((role) => role.value === position)?.label ?? `位置 ${position}`)
+    .join(' / ');
 export const percent = (value: number | null | undefined) =>
   value == null ? '—' : `${(value * 100).toFixed(1)}%`;
 export const decimal = (value: number | null | undefined, digits = 1) =>

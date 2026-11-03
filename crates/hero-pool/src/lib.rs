@@ -4,6 +4,12 @@ use dpda_statistics::{effective_samples, smoothed_rate, time_weight, wilson};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
+pub mod role_analysis;
+pub use role_analysis::{
+    analyze_roles, HeroRoleAnalysis, MatchRoleEvidence, MatchRoleInference, PlayerRoleEvidence,
+    RoleAnalysis, RoleStrength, RoleSupport,
+};
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StatsWindow {
     pub matches: usize,
