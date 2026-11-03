@@ -8,6 +8,8 @@
 
 [Linux API 调试](docs/linux-debug.md) · [Windows 构建](docs/windows-build.md) · [数据来源](docs/data-sources.md) · [识别与校准](docs/vision-system.md) · [已知问题](docs/known-issues.md)
 
+面向首批 100–1,000 位用户的 [公开战绩服务方案](docs/public-service-proposal.md) 已形成提案，包含网站、个人账号、同步队列和成本模型；公开服务尚未实现或上线，当前下载仍为桌面与 Linux 调试版本。
+
 ![DPDA 首次启动的空数据界面](docs/images/ui-empty.png)
 
 上图来自实际浏览器渲染的空状态，仅展示界面；不代表已经导入用户数据或验证游戏识别。

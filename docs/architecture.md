@@ -4,6 +4,8 @@
 
 DPDA 采用 Tauri 2 + Rust + React/TypeScript + SQLite。本地数据库是个人历史、配置和同步进度的持久化来源；React 通过 Tauri commands 访问应用服务，不能直接调用外部战绩接口。捕获、视觉、历史同步和推荐各自独立于窗口 UI。
 
+本文描述当前桌面实现。面向 100–1,000 位用户的 Web、PostgreSQL 与多人同步设计见 [公开服务提案](public-service-proposal.md)，状态为 proposed，未替代下述本地实现。
+
 ## 模块与边界
 
 | 模块 | 职责与依赖 |
