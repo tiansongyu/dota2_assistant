@@ -8,13 +8,13 @@
 
 新增/修改文件：`fetch-locked-game-icons.py`、`pack-game-icons.py`、`game-icons.snapshot.json`、原下载器、Node 门禁、Windows/Linux 工作流、测试与 [故障记录](reports/game-icons-build-fix.md)。
 
-测试结果：本地归档恢复、缓存离线复用、前端构建与 1,822 个公开文件逐文件校验通过。完整回归和新 Windows CI 结果见故障记录。
+测试结果：本地 71 项 Rust、70 项 Python、16 项 Node 测试通过；真实网络/离线恢复与 1,822 个公开文件校验通过。提交 `6b1d25e` 的 Windows/Linux CI 均通过，Windows NSIS 安装及启动检查成功；两个平台的资源清单与快照逐字节一致。详见故障记录。
 
 尚未验证：Windows 实际游戏捕获、WebView 内容与清洁机器安装，仍沿用原验收边界。
 
 存在问题：原 CDN 缺失的 391 个条目和 24 个跳过条目仍如实保留；旧 Windows 日志没有重定向 Location，不能声称复现其目标域名。
 
-下一阶段：完成修复提交的 Windows/Linux CI，并继续原有实机验收。
+下一阶段：继续原有 Windows WebView、清洁机器与真实游戏验收。
 
 ## 游戏图标下载与程序接入
 

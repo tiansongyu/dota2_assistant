@@ -39,4 +39,14 @@ Windows 清单记录 `items/arcane_boots` 下载失败，原因是 `cross-host o
 - 真正的 48,810,988 字节 ZIP 在空目录离线恢复成功，1,802 个图像与旧锁一致；`assets:sync` 对已有缓存不发网络请求。
 - 开发源与生产 `dist` 的 1,822 个公开文件逐文件校验通过；原图像锁文件没有改动。
 
-真实 GitHub Release 网络冷恢复成功，随后缓存离线复验成功。新 Windows/Linux 工作流结果在修复提交验证后补录。Windows 游戏画面识别、FPS、清洁机器安装和 WebView 内容验收仍未完成，构建成功不代表这些项目通过。
+真实 GitHub Release 网络冷恢复成功，随后缓存离线复验成功。
+
+提交 `6b1d25e` 的 [Windows CI](https://github.com/tiansongyu/dota2_assistant/actions/runs/41607937271) 与 [Linux CI](https://github.com/tiansongyu/dota2_assistant/actions/runs/41607937348) 均成功。Windows 从空缓存恢复并校验快照耗时 5 秒；Python 执行 70 项、跳过 14 项平台不适用测试，结果成功。NSIS 构建、生产静态资源验证、静默安装以及安装后进程保持运行 8 秒的检查均通过。
+
+下载两个平台的 CI 清单后，确认它们与固定快照的 manifest 逐字节一致。下载的安装包也与 CI 的 SHA-256 文件一致：
+
+- 文件：`Dota Personal Draft Assistant_0.1.0_x64-setup.exe`
+- 大小：62951304 字节
+- SHA-256：`9667c377280c4c31203b641caffb1ce402e6739aa981617bc651aac0ea7b8b54`
+
+安装包位于上述 Windows 工作流的 `dpda-windows-nsis-unsigned` artifact，旧 `v0.1.0-dev.1` release 安装包没有被替换。Windows 游戏画面识别、FPS、清洁机器安装和 WebView 内容验收仍未完成，构建成功不代表这些项目通过。
