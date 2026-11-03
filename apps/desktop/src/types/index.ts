@@ -189,7 +189,7 @@ export interface AppSnapshot {
   settings: AppSettings;
   data_updated_at: number | null;
 }
-export type Page = 'dashboard' | 'pool' | 'history' | 'draft' | 'settings';
+export type Page = 'dashboard' | 'pool' | 'history' | 'draft' | 'assets' | 'settings';
 export interface SlotDiagnosticState {
   slot_id: number;
   hero_id: number | null;

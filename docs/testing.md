@@ -2,6 +2,10 @@
 
 记录日期：2026-11-03。自动测试、网络 smoke、真实截图评估和游戏实机验收分别报告，不能互相替代。
 
+## 游戏图标与离线资源更新
+
+实际取得并校验 1,802 个图像文件，127 位英雄的两种图完整，技能/物品缺失和共享图分别记录。当前资源更新通过 71 项 Rust、41 项 Python、12 项 Node 测试及格式/静态检查/前端构建；开发与生产 Chromium 的实际资源页面、Linux 原生 Tauri 29 项检查均通过。具体数量、命令、来源和未验证边界见 [图标验收报告](reports/game-icons.md)。下方旧阶段测试数保留其历史含义。
+
 ## main 的自动位置与 Linux 图形调试更新
 
 本节是 `v0.1.0-dev.1` 之后的源码验证；下面的发布包记录仍对应原提交。当前本地门禁通过 71 项 Rust 测试、18 项 Python 测试（其中 12 项仅 Linux 启动器），以及 fmt、严格 Clippy、TypeScript、ESLint、Vite build。
@@ -42,6 +46,8 @@
 
 ```bash
 npm ci --prefix apps/desktop
+python3 scripts/fetch-game-icons.py
+npm --prefix apps/desktop run test:assets
 scripts/check.sh
 ```
 

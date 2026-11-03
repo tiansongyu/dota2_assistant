@@ -9,6 +9,7 @@
 .env
 !.env.example
 /artifacts/
+/assets/game-icons/
 **/__pycache__/
 **/.DS_Store
 /apps/desktop/src-tauri/gen/

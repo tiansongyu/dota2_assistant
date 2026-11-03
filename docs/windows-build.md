@@ -15,6 +15,7 @@
 - Rust stable MSVC，至少 1.90；Visual Studio C++ Build Tools 和 Windows SDK。
 - Node.js 24；Edge WebView2 Runtime；Microsoft Visual C++ 2015—2022 x64 Redistributable（OpenCV 动态库的运行依赖）。
 - LLVM/libclang 和 OpenCV 4.x。CI 固定使用官方 OpenCV 4.11.0 Windows 包，链接 `opencv_world4110`。
+- Python 3.10 或更新版本，用于首次下载与校验公开游戏图标；最终用户运行程序不需要 Python。
 
 依赖依据：[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)、[opencv-rust 安装指南](https://github.com/twistedfall/opencv-rust/blob/v0.101.1/INSTALL.md)。
 
@@ -29,6 +30,7 @@ $env:OPENCV_LINK_LIBS = 'opencv_world4110'
 $env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'
 $env:PATH = 'C:\opencv\build\x64\vc16\bin;' + $env:PATH
 npm ci --prefix apps/desktop
+python scripts/fetch-game-icons.py
 cd apps/desktop
 npm run tauri dev
 ```
@@ -38,6 +40,8 @@ npm run tauri dev
 ## 打包
 
 安装包需要带上 OpenCV DLL，并保留其 license，不能只在开发机 PATH 中找到 DLL 就认为新机器可运行。`.github/workflows/windows.yml` 展示获取官方 OpenCV、执行全部检查、生成 `bundle-windows.json` 资源映射和构建 NSIS 的完整步骤。
+
+当前源码构建还会校验本地 [游戏图标资源](game-assets.md)，并通过 `frontendDist` 嵌入应用。图标只随前端带一份，不再加入 `bundle.resources`；旧 `v0.1.0-dev.1` 下载包没有本次图标更新。CDN 已知缺图保留清单说明，网络失败、未完成下载或哈希不符会阻止构建。
 
 ```powershell
 # 在 apps/desktop 下，按工作流准备 src-tauri/runtime 和资源配置后：

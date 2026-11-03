@@ -2,6 +2,7 @@ import { Fragment, useState, type ReactNode } from 'react';
 import { Crosshair, Database, Swords } from 'lucide-react';
 import type { Hero, MatchRecord, MatchRoleInference } from '../types';
 import { date, dateTime, heroName, percent, positionNames, roles, won } from '../services/format';
+import { heroAssetUrl } from '../services/game-assets';
 
 export function EmptyState({
   title,
@@ -27,13 +28,19 @@ export function EmptyState({
   );
 }
 export function HeroMark({ hero, small = false }: { hero: Hero | undefined; small?: boolean }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const url = hero ? heroAssetUrl(hero.id, small) : null;
   return (
     <div className={`hero-mark ${small ? 'small' : ''}`} aria-hidden="true">
-      {hero?.localized_name
-        .split(/[-\s]+/)
-        .map((word) => word[0])
-        .slice(0, 2)
-        .join('') ?? '—'}
+      {url && failedUrl !== url ? (
+        <img src={url} alt="" loading="lazy" decoding="async" onError={() => setFailedUrl(url)} />
+      ) : (
+        (hero?.localized_name
+          .split(/[-\s]+/)
+          .map((word) => word[0])
+          .slice(0, 2)
+          .join('') ?? '—')
+      )}
     </div>
   );
 }

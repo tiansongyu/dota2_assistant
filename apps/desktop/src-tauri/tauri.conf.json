@@ -22,26 +22,18 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: asset: http://asset.localhost data:; connect-src ipc: http://ipc.localhost; font-src 'self'; object-src 'none'; frame-src 'none'"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: asset: http://asset.localhost data:; connect-src 'self' ipc: http://ipc.localhost; font-src 'self'; object-src 'none'; frame-src 'none'"
     }
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
-    "icon": [
-      "icons/icon.png",
-      "icons/icon.ico"
-    ],
+    "targets": ["nsis"],
+    "icon": ["icons/icon.png", "icons/icon.ico"],
     "shortDescription": "本地个人英雄池与 DOTA2 BP 推荐助手",
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "languages": [
-          "SimpChinese",
-          "English"
-        ]
+        "languages": ["SimpChinese", "English"]
       },
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

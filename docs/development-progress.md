@@ -2,6 +2,20 @@
 
 更新：2026-11-03。已发布 [v0.1.0-dev.1](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1)，提供 Windows 安装包与 Linux 调试工具；代码完成、自动化通过和游戏验收分别标记。
 
+## 游戏图标下载与程序接入
+
+已完成：实际下载 1,802 张英雄、技能、物品、命石和辅助图像；来源/哈希锁、断点恢复、共享图和缺失清单；替换英雄文字标记；增加无账号可用的资源页；开发、生产与 Tauri 离线打包集成。
+
+新增/修改文件：`scripts/fetch-game-icons.py`、`lock-game-icons.py`、`verify-game-icons.mjs`、`assets/game-icons.lock.json`、GameAssets 页面与公共英雄组件、Vite/CSP、CI、测试与 [资源文档](game-assets.md)。实际图像保存在生成目录，不写入 Git。
+
+测试结果：71 项 Rust、41 项 Python、12 项 Node 测试及全部格式/静态/前端构建检查通过；1,801 张 PNG 完全解码；开发/生产浏览器与 Linux 原生 Tauri 29 项检查通过。详见 [报告](reports/game-icons.md)。
+
+尚未验证：新资源包在 Windows WebView 中的实际渲染、图像商业再分发授权，以及原有真实选人识别矩阵。
+
+存在问题：目录对应地址中 390 个技能和 1 个物品返回 404，含部分英雄关联先天能力；另有 24 个内部/占位条目。没有把天赋共用图、配方共用图或缺失条目计成独立图片。旧发布包没有此更新。
+
+下一阶段：在 Windows 实机核验新增资源显示；公开服务可复用本次稳定 ID、图像清单和来源记录，仍需落实其数据使用与部署条件。
+
 ## 公开服务方案：100–1,000 位用户
 
 已完成：按用户确认规模形成 [公开服务提案](public-service-proposal.md)，明确自有 API/数据库、按需数据同步、账号隔离、自动位置分析、Windows 本地捕获边界及按请求数计算的费用模型。状态为 proposed。

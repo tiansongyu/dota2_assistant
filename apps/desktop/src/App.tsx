@@ -9,6 +9,7 @@ import {
   Database,
   Expand,
   History as HistoryIcon,
+  Images,
   LayoutDashboard,
   LoaderCircle,
   Minimize2,
@@ -25,6 +26,7 @@ import { HeroPool } from './pages/HeroPool';
 import { History } from './pages/History';
 import { DraftPage } from './pages/Draft';
 import { Settings } from './pages/Settings';
+import { GameAssets } from './pages/GameAssets';
 import { Recommendations } from './components/Recommendations';
 import { useApp } from './hooks/useApp';
 import { action, appStore, connect, refresh } from './stores/app-store';
@@ -37,6 +39,7 @@ const nav = [
   { id: 'pool', label: '我的英雄池', icon: Users },
   { id: 'history', label: '历史战绩', icon: HistoryIcon },
   { id: 'draft', label: 'BP 推荐', icon: Swords },
+  { id: 'assets', label: '游戏资源', icon: Images },
   { id: 'settings', label: '设置', icon: SettingsIcon },
 ] as const;
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -233,7 +236,7 @@ function Shell() {
               </button>
             </div>
           )}
-          {loading ? (
+          {loading && page !== 'assets' ? (
             <div className="loading-state" role="status">
               <LoaderCircle className="spin" size={28} />
               <h2>正在读取本地数据</h2>
@@ -245,6 +248,7 @@ function Shell() {
               {page === 'pool' && <HeroPool />}
               {page === 'history' && <History />}
               {page === 'draft' && <DraftPage />}
+              {page === 'assets' && <GameAssets />}
               {page === 'settings' && <Settings />}
             </div>
           )}

@@ -204,6 +204,42 @@ def run(args, work):
         check("fresh_preferences", initial["profile"] is None and not initial["matches"])
         check("current_snapshot_contract", isinstance(initial.get("automatic_pool"), list)
               and isinstance(initial.get("pool_candidates"), list))
+        if args.game_assets:
+            asset_result = driver.request("POST", driver.path("execute/async"), {
+                "script": """
+                const done = arguments[arguments.length - 1];
+                (async () => {
+                  const response = await fetch('/game-icons/manifest.json');
+                  if (!response.ok) throw new Error('manifest HTTP ' + response.status);
+                  const manifest = await response.json();
+                  const categories = ['heroes', 'hero-icons', 'abilities', 'items', 'facets', 'ui'];
+                  const samples = categories.map(category => manifest.entries.find(
+                    entry => entry.category === category && entry.status === 'downloaded'));
+                  const talent = manifest.entries.find(entry => entry.path === 'ui/talents.svg');
+                  if (talent) samples.push(talent);
+                  const images = await Promise.all(samples.map(entry => new Promise((resolve, reject) => {
+                    if (!entry) { reject(new Error('missing downloaded category')); return; }
+                    const img = new Image();
+                    img.onload = () => resolve({category: entry.category, path: entry.path,
+                      width: img.naturalWidth, height: img.naturalHeight,
+                      expected_width: entry.width, expected_height: entry.height});
+                    img.onerror = () => reject(new Error('cannot decode ' + entry.path));
+                    img.src = '/game-icons/' + entry.path;
+                  })));
+                  done({ok: true, complete: manifest.complete, entries: manifest.entries.length,
+                    source_commit: manifest.source.commit, images});
+                })().catch(error => done({ok: false, error: String(error)}));
+                """, "args": []})
+            check("bundled_manifest_available_under_native_csp",
+                  asset_result.get("ok") and asset_result.get("complete"), asset_result)
+            check("bundled_png_and_svg_decode_in_webkit", all(
+                image["width"] == image["expected_width"] and image["height"] == image["expected_height"]
+                for image in asset_result["images"]))
+            driver.script("Array.from(document.querySelectorAll('nav button')).find(b => b.textContent.trim() === '游戏资源').click(); return true;")
+            driver.wait_script("return document.querySelector('.asset-grid img')?.naturalWidth > 0;")
+            check("native_resource_browser_without_account",
+                  driver.script("return document.body.innerText.includes('本地图片') && document.documentElement.scrollWidth <= innerWidth;"))
+            driver.screenshot(work / "game-assets.png")
         driver.invoke("save_account", {"input": "0"}, should_fail=True)
         check("invalid_account_does_not_mutate_profile", driver.invoke("get_snapshot")["profile"] is None)
         driver.invoke("save_account", {"input": str(STEAM64_BASE + account)})
@@ -240,6 +276,10 @@ def run(args, work):
         check("linux_capture_rejection_is_explicit", "Windows" in error)
         driver.script("Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'BP 推荐').click(); return true;")
         driver.wait_script("return document.body.innerText.includes('BP 工作台');")
+        if args.game_assets:
+            driver.script("document.querySelector('.hero-mark img')?.scrollIntoView({block: 'center'}); return true;")
+            driver.wait_script("return Array.from(document.querySelectorAll('.hero-mark img')).some(img => img.complete && img.naturalWidth > 0);")
+            check("native_hero_marks_use_local_images", driver.script("return Array.from(document.querySelectorAll('.hero-mark img')).every(img => new URL(img.src).origin === location.origin);"))
         check("main_window_no_horizontal_overflow", driver.script("return document.documentElement.scrollWidth <= innerWidth;"))
         driver.screenshot(work / "main.png")
         main_handle = driver.request("GET", driver.path("window"))
@@ -315,6 +355,7 @@ def main():
     parser.add_argument("--native-driver", default="WebKitWebDriver")
     parser.add_argument("--account", required=True, help="Explicit public test account ID; never a user default")
     parser.add_argument("--fixture-db", help="Optional existing database with real imported matches; opened read-only")
+    parser.add_argument("--game-assets", action="store_true", help="Verify bundled PNG/SVG icons, local manifest CSP, and the resource browser")
     parser.add_argument("--output", type=Path, help="New output directory; must not already exist")
     args = parser.parse_args()
     if platform.system() != "Linux":

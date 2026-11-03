@@ -7,6 +7,7 @@
 当前 `main` 提供 Linux 图形调试启动脚本；它不包含 Linux 游戏捕获。先按 [README](../README.md#ubuntu-2204--2404-调试-ui) 安装 Tauri/Linux 依赖，并执行 `npm ci --prefix apps/desktop`。在 Linux 图形桌面终端、仓库根目录运行：
 
 ```bash
+python3 scripts/fetch-game-icons.py
 python3 scripts/start-linux-debug.py \
   --db ./local/dpda.db --account YOUR_STEAM32_OR_STEAM64 --build
 ```
@@ -14,6 +15,8 @@ python3 scripts/start-linux-debug.py \
 `--db` 必须指向已导入的 DPDA SQLite。脚本使用 SQLite backup API，将数据库完整复制到 `~/.local/share/dpda-debug-sessions/` 下的新会话目录，选中账号并启动真实 Tauri 窗口。源库不被修改；默认位置为自动分析，已有手动设置则保留。输出的 `resume_command` 可直接复制执行，再次打开同一会话并保留设置；不要每次都创建新副本。
 
 已构建最新桌面二进制时可省略 `--build`。没有显示服务器时用 `--prepare-only` 只准备副本，或使用下方 CLI。仅 `npm run dev` 是浏览器预览，不能读取本地数据库。
+
+图标只需首次下载，后续复用本地缓存；“游戏资源”页无需账号即可浏览。已有隔离会话可用原 `--resume` 命令加 `--build` 更新程序，保留同一份个人数据。资源来源、缺失及打包说明见 [game-assets.md](game-assets.md)。下方无界面 CLI 不需要下载这些图标。
 
 总览显示历史位置分布、证据覆盖和未知样本；“我的英雄池”展示自动候选与手动覆盖；“历史战绩”提供 25/50/100 场分页、页码跳转、逐场全部已保存字段、位置推断理由和 JSON。原始缺失字段仍为 `null`。界面与 CLI 数据集相同；不把未保存的上游字段伪装成已经获取。
 

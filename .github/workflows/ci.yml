@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - name: Native build dependencies
@@ -27,7 +27,21 @@ jobs:
         run: rustup update stable && rustup default stable && rustup component add clippy rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: npm ci --prefix apps/desktop
+      - name: Cache generated Valve game icons
+        uses: actions/cache@v5
+        with:
+          path: assets/game-icons
+          key: ${{ runner.os }}-game-icons-v1-${{ hashFiles('scripts/fetch-game-icons.py', 'assets/game-icons.lock.json', 'assets/data-provenance.json') }}
+      - name: Download or validate cached game icons
+        env:
+          PYTHONUTF8: "1"
+        run: python3 scripts/fetch-game-icons.py --workers 8 --rate 8
+      - name: Verify locked offline assets and explicit missing entries
+        run: npm --prefix apps/desktop run assets:verify -- --require-lock
+      - run: npm --prefix apps/desktop run test:assets
       - run: scripts/check.sh
+      - name: Verify production static asset copy
+        run: npm --prefix apps/desktop run assets:verify -- --check-dist --require-lock
       - name: Build independent Linux API diagnostic binary
         run: cargo build --locked --release -p dpda-debug
       - name: Collect dependency licenses
@@ -45,3 +59,10 @@ jobs:
           path: |
             artifacts/dpda-linux-debug-x86_64.tar.gz
             artifacts/SHA256SUMS-linux.txt
+      - name: Preserve icon coverage manifest
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: game-icons-manifest-linux
+          path: assets/game-icons/manifest.json
+          if-no-files-found: ignore

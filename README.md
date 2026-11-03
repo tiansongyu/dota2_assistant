@@ -10,6 +10,8 @@
 
 面向首批 100–1,000 位用户的 [公开战绩服务方案](docs/public-service-proposal.md) 已形成提案，包含网站、个人账号、同步队列和成本模型；公开服务尚未实现或上线，当前下载仍为桌面与 Linux 调试版本。
 
+`main` 另提供 [游戏图标下载与本地资源浏览](docs/game-assets.md)：英雄头像、技能、物品、命石和辅助图标按实际清单下载并接入程序，缺失及共用图标分别记录。旧下载包尚不包含此更新。
+
 ![DPDA 首次启动的空数据界面](docs/images/ui-empty.png)
 
 上图来自实际浏览器渲染的空状态，仅展示界面；不代表已经导入用户数据或验证游戏识别。
@@ -63,11 +65,14 @@ cargo build --locked --release -p dpda-debug
 sudo apt-get install build-essential pkg-config libwebkit2gtk-4.1-dev libgtk-3-dev \
   libayatana-appindicator3-dev librsvg2-dev libopencv-dev clang libclang-dev
 npm ci --prefix apps/desktop
+python3 scripts/fetch-game-icons.py
 cd apps/desktop
 npm run tauri dev
 ```
 
 Node 要求至少 22.12，建议 24 LTS。Linux 下可以验证同步、英雄池、手动 BP 和界面；捕获模块会明确报告 Windows 专用。`npm run dev` 只启动浏览器界面预览，不能调用数据库或真实同步。
+
+桌面构建与开发启动前需要完整的本地图标缓存；首次执行上述下载命令，之后可离线复用。Windows 使用 `python scripts/fetch-game-icons.py`。详细来源、校验与更新步骤见 [游戏资源说明](docs/game-assets.md)。
 
 已有 CLI 数据库时，可从仓库根目录直接打开带真实数据的图形界面：
 
@@ -103,7 +108,7 @@ DOTA2 个人资料中的好友 ID 通常可作为 Steam32 Account ID。若 Steam
 python3 scripts/fetch-hero-templates.py --output artifacts/hero-templates
 ```
 
-该缓存不进 Git，也不随安装包分发。公开肖像并不保证与当前 UI 槽位匹配；需使用真实截图评估。配置、标注格式、评估命令和验收矩阵见 [视觉系统](docs/vision-system.md)。
+这份实验模板缓存不进 Git，也不直接打包；它与新构建嵌入的 [UI 游戏图标](docs/game-assets.md) 用途不同。公开肖像并不保证与当前 UI 槽位匹配，仍需使用真实截图评估。配置、标注格式、评估命令和验收矩阵见 [视觉系统](docs/vision-system.md)。
 
 ### 悬浮窗快捷键
 
@@ -122,6 +127,7 @@ OpenDota 只能返回其可访问的比赛，不保证恢复私密或从未记�
 
 ```bash
 npm ci --prefix apps/desktop
+python3 scripts/fetch-game-icons.py
 ./scripts/check.sh
 ```
 
