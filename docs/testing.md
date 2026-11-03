@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | Rust Workspace | Ubuntu 22.04 / Rust 1.97.1，50 项单元及集成测试通过 | 测试数据来源按目录标注；包含合成算法测试 |
 | 格式与静态检查 | `cargo fmt --all --check`；`cargo clippy --workspace --all-targets --locked -- -D warnings` 通过 | 不证明实机性能 |
+| 许可收集器 | Linux / Windows 均通过 6 项 Python 测试；两个发布二进制的 normal 依赖与 npm 生产依赖未发现原文收集缺口 | 构建/测试/其他平台依赖仍有 36 项收集缺口，不等于完整法律审查 |
 | 前端 | TypeScript、ESLint、Vite build 通过 | 原生 WebView 与浏览器行为还需分别检查 |
 | 浏览器 UI | Chromium，1440 / 1024 / 375 宽的五页与 360 宽悬浮界面，无页面横向溢出和 JS 异常 | 空数据真实渲染，不使用假战绩或 Mock IPC |
 | 可视化校准 | 绘制 ROI、数值校验、ZIP 下载、profile 与 PNG 内容检查通过 | 测试图是应用自身截图，非 DOTA2，不用于测识别准确率 |
@@ -18,13 +19,14 @@
 | Windows 捕获编译 | `x86_64-pc-windows-gnu` 交叉 check 与严格 clippy 通过 | 没有执行 Windows 捕获 |
 | 原生 Tauri 集成 | Linux WebKitGTK，25 项检查 / 26 次真实 IPC 调用通过 | 真实 SQLite、双窗口、紧凑尺寸及重启；详见 [原生报告](reports/native-smoke.md) |
 | Tauri Linux 构建 | `npm run tauri -- build --debug --no-bundle` 通过 | Windows 发布包另由 Windows workflow 验证 |
+| Windows NSIS 安装与启动 | Windows 2022 CI runner 静默安装成功，安装后进程保持运行 8 秒；安装包内 DLL 与许可文件核验通过 | 未检查 Windows WebView 渲染/IPC；runner 有开发 PATH、VC++ 与 WebView2，不能代替清洁机测试 |
 | 前端依赖审计 | npm audit 包括开发依赖为 0 条已报告漏洞 | 是该时间点的数据库结果，不保证没有未知漏洞 |
 
 浏览器脚本：[ui-smoke.mjs](../apps/desktop/tests/ui-smoke.mjs)；结构化结果：[browser-smoke-result.json](../tests/ui/browser-smoke-result.json)。
 
-GitHub 首轮 [Windows 构建](https://github.com/tiansongyu/dota2_assistant/actions/runs/41570539160) 通过并生成 NSIS 开发安装包；它只证明该提交在 CI 的编译、测试和打包，尚不证明干净 Windows 用户环境或游戏验收。
+发布提交 `d276485` 的 [Windows CI](https://github.com/tiansongyu/dota2_assistant/actions/runs/41573643582) 与 [Linux CI](https://github.com/tiansongyu/dota2_assistant/actions/runs/41573643644) 全部通过。各平台均执行 50 项 Rust 测试、6 项 Python 测试及对应格式、静态检查和前端构建。
 
-GitHub 首轮 [Linux 质量门禁](https://github.com/tiansongyu/dota2_assistant/actions/runs/41570539110) 通过，已下载其独立 CLI 产物并在本机解压运行 `doctor`，SQLite 自检正常。
+两个 CI 产物已下载并核对 SHA-256；Linux CLI 已在本机解压运行 `doctor`，SQLite 自检正常。发布版本为 [v0.1.0-dev.1](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1)，详见 [发布核验记录](reports/release-v0.1.0-dev.1.md)。
 
 ## 运行质量门禁
 

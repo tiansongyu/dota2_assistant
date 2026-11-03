@@ -4,6 +4,17 @@
 
 ## 构建与自检
 
+可直接下载 [v0.1.0-dev.1 的 Linux 调试包](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1)，将 `dpda-linux-debug-x86_64.tar.gz` 与 `SHA256SUMS-linux.txt` 放在同一目录：
+
+```bash
+sha256sum -c SHA256SUMS-linux.txt
+tar -xzf dpda-linux-debug-x86_64.tar.gz
+./dpda-linux-debug/dpda-debug doctor
+./dpda-linux-debug/dpda-debug api-probe --account YOUR_STEAM32_OR_STEAM64
+```
+
+后续命令中的 `target/debug/dpda-debug` 可替换为解压后的 `./dpda-linux-debug/dpda-debug`。下载版不需要 Rust；构建版步骤如下。
+
 本次验证环境为 Ubuntu 22.04 x86_64、Rust 1.97.1。从项目根目录执行：
 
 ```bash

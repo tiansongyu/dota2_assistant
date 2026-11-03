@@ -1,6 +1,6 @@
 # 开发进展
 
-更新：2026-11-03。当前交付为可构建的开发版本；代码完成、自动化通过和游戏验收分别标记。
+更新：2026-11-03。已发布 [v0.1.0-dev.1](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1)，提供 Windows 安装包与 Linux 调试工具；代码完成、自动化通过和游戏验收分别标记。
 
 ## Phase 0：技术预研
 
@@ -26,7 +26,7 @@
 
 尚未验证：全部 Windows UI 原生行为及安装环境。
 
-问题：全量快照仍需大数据性能基准。
+问题：已有 10k/50k 合成模块性能报告；完整桌面快照、IPC 和渲染仍需端到端测量。
 
 下一阶段：已接入个人历史。
 
@@ -78,24 +78,24 @@
 
 新增/修改：Tauri 服务、悬浮页面、诊断面板、捕获生命周期。
 
-测试：浏览器悬浮布局、快捷键恢复的后端约束、Linux 原生构建和双窗口实际测试通过；修正紧凑模式原生窗口高度并验证宽度保留。
+测试：浏览器悬浮布局、快捷键恢复的后端约束、Linux 原生构建和双窗口实际测试通过；25 项原生检查 / 26 次真实 IPC 包含紧凑窗口高度、宽度保留和重启。另完成 10k/50k 合成历史的读取、聚合与推荐测量。
 
-尚未验证：实际 DOTA2 窗口遮挡、Windows多显示器、长期资源占用和 FPS。
+尚未验证：实际 DOTA2 窗口遮挡、Windows 多显示器、长期资源占用和 FPS。
 
 问题：未做游戏性能承诺；CPU/GPU及端到端捕获延迟仍需外部实测。
 
-下一阶段：Windows 安装包与实机回归。
+下一阶段：Windows 开发安装包已发布；真实游戏回归仍需 Windows 硬件与截图。
 
 ## Phase 6：开源仓库与开发打包
 
-已完成：MIT、中文 README、隐私/贡献/安全说明、变更记录、第三方声明、GitHub 工作流。增加独立 Linux API 调试工具供开发者验证。
+已完成：MIT 公共仓库、中文 README、隐私/贡献/安全说明、变更记录、第三方声明与许可收集、GitHub 工作流。发布 `v0.1.0-dev.1` Windows NSIS 安装包、独立 Linux API 调试工具和 SHA-256 文件。
 
-新增/修改：根目录开源文件、`.github`、`debug-cli`、`linux-debug.md`、`windows-build.md`、Outdraft 功能对照。
+新增/修改：根目录开源文件、`.github`、`debug-cli`、`scripts/collect-licenses.py`、`linux-debug.md`、`windows-build.md`、Outdraft 功能对照、`reports/release-v0.1.0-dev.1.md`。
 
-测试：Linux CLI 无 GTK/OpenCV 动态依赖；真实 API 与离线分析成功。Windows 包以对应 Actions 产物为准。
+测试：提交 `d276485` 的 Linux/Windows CI 均通过 50 项 Rust 测试、6 项许可收集器测试及格式/静态检查/前端构建。Windows NSIS 在 CI 静默安装并启动，进程存活 8 秒。两个包的摘要和许可内容已核对；Linux 下载包实际执行 `doctor` 成功，无 GTK/OpenCV 动态依赖。
 
 尚未验证：清洁 Windows 安装与全部游戏验收；尚未签名。
 
-问题：当前应按开发版本发布，不能标为生产就绪。
+问题：Windows 启动 smoke 未验证 WebView 渲染/IPC，runner 有开发 PATH 和预装运行库；VC++ 前置依赖尚未自动安装。当前发布为开发预览，不能标为生产就绪。
 
-下一阶段：处理 CI 实际失败，保存构建产物与校验值，并完成外部硬件验收。
+下一阶段：在用户的 Linux 环境验证本人公开账号；收集已授权真实选人截图，在 Windows DOTA2 实机执行识别、悬浮窗和 FPS 矩阵，再进行清洁机器安装验收。外部硬件与真实素材缺失的项目保持未验收。

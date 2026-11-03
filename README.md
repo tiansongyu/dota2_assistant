@@ -4,13 +4,24 @@
 
 **DPDA** 是以个人英雄池为边界的 DOTA2 BP 助手：同步公开战绩，在本地分析熟练度、历史对抗与协同，再为当前阵容推荐 Top 3—5 英雄。
 
-当前为 **0.1 开发版本**。真实 OpenDota 导入、SQLite、个人池、可解释评分和 Linux 调试工具已有实现与测试。Windows 捕获代码已完成交叉检查；真实 DOTA2 截图准确率、游戏内性能和清洁机安装尚未验收。不要把开发安装包当作已经验证的完整产品。具体证据见 [测试记录](docs/testing.md) 和 [进展](docs/development-progress.md)。
+当前为 **0.1 开发版本**。真实 OpenDota 导入、SQLite、个人池、可解释评分和 Linux 调试工具已有实现与测试。Windows 构建、打包和 CI 环境的安装后进程启动检查已通过；真实 DOTA2 截图准确率、游戏内性能和清洁机安装尚未验收。具体证据见 [测试记录](docs/testing.md) 和 [进展](docs/development-progress.md)。
 
 [Linux API 调试](docs/linux-debug.md) · [Windows 构建](docs/windows-build.md) · [数据来源](docs/data-sources.md) · [识别与校准](docs/vision-system.md) · [已知问题](docs/known-issues.md)
 
 ![DPDA 首次启动的空数据界面](docs/images/ui-empty.png)
 
 上图来自实际浏览器渲染的空状态，仅展示界面；不代表已经导入用户数据或验证游戏识别。
+
+## 下载开发预览版
+
+[v0.1.0-dev.1 发布页](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1) 提供以下产物及 SHA-256 校验文件：
+
+| 平台 | 下载 | 用途 |
+| --- | --- | --- |
+| Windows x64 | [NSIS 安装包](https://github.com/tiansongyu/dota2_assistant/releases/download/v0.1.0-dev.1/dpda-windows-x64-setup.exe) | 未签名的桌面开发版本；需 VC++ x64 Runtime 和 WebView2 |
+| Linux x86_64 | [无界面调试工具](https://github.com/tiansongyu/dota2_assistant/releases/download/v0.1.0-dev.1/dpda-linux-debug-x86_64.tar.gz) | 验证 API、SQLite、统计和回测；不含 Linux 游戏捕获 |
+
+安装前阅读 [Windows 前置条件](docs/windows-build.md) 或 [Linux 使用说明](docs/linux-debug.md)。构建提交、验收边界和产物摘要见 [发布核验记录](docs/reports/release-v0.1.0-dev.1.md)。
 
 ## 能做什么
 
@@ -56,7 +67,7 @@ Node 要求至少 22.12，建议 24 LTS。Linux 下可以验证同步、英雄�
 
 ### Windows
 
-安装 Rust MSVC、Visual Studio C++ Build Tools、Node 24、WebView2、LLVM 和 OpenCV，然后按 [Windows 构建指南](docs/windows-build.md) 构建。CI 的 `Windows build` 工作流会尝试生成包含 OpenCV 运行库的 NSIS 开发安装包；成功与否以对应 commit 的 Actions 记录和产物为准。
+安装 Rust MSVC、Visual Studio C++ Build Tools、Node 24、WebView2、LLVM 和 OpenCV，然后按 [Windows 构建指南](docs/windows-build.md) 构建。CI 的 `Windows build` 工作流生成包含 OpenCV 运行库和第三方许可的 NSIS 安装包，并执行安装后进程启动检查；结果以对应 commit 的 Actions 记录为准。
 
 ## 第一次使用
 
@@ -102,7 +113,7 @@ npm ci --prefix apps/desktop
 ./scripts/check.sh
 ```
 
-门禁运行 Rust 格式、严格 Clippy、全部单元测试，以及 TypeScript、ESLint、Vite build。网络测试显式执行，CI 默认不消耗你的 API 配额。新增识别能力必须附来源清晰的真实截图评估；合成单元测试不能替代实机报告。
+门禁运行 Rust 格式、严格 Clippy、Rust 和许可收集器测试，以及 TypeScript、ESLint、Vite build。网络测试显式执行，CI 默认不消耗你的 API 配额。新增识别能力必须附来源清晰的真实截图评估；合成单元测试不能替代实机报告。
 
 目录与设计见 [架构](docs/architecture.md)、[数据库](docs/database.md)、[开发计划](docs/development-plan.md)、[贡献指南](CONTRIBUTING.md)。Outdraft 的公开功能对照见 [参考分析](docs/outdraft-reference.md)。
 
@@ -112,7 +123,7 @@ npm ci --prefix apps/desktop
 
 **同步为空或出现 429？** 检查账号 ID、公开比赛设置、日期与平台配额；空响应不等于没有玩过比赛。稍后继续同步，本地记录不会因此删除。
 
-**断网还能使用吗？** 已同步的战绩、英雄目录、手动阵容和推荐都保存在本地。首次导入和数据更新需要网络。
+**断网还能使用吗？** 已同步的战绩和英雄目录保存在本地，断网时仍可输入阵容并计算推荐。当前阵容在应用重启后清空。首次导入和数据更新需要网络。
 
 **数据放在哪里？** 桌面使用 Tauri 应用数据目录下的 `io.dpda.desktop/dpda.sqlite`，日志在同级 `logs`。Linux CLI 使用你指定的 `--db` 路径。删除前退出应用并先备份，详见 [隐私说明](docs/privacy.md)。
 
