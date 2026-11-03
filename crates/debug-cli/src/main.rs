@@ -22,6 +22,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Discover locally remembered Steam IDs; no login, database writes or network requests.
+    SteamAccounts {
+        /// Inspect only this Steam installation directory, useful for nonstandard installs or fixtures.
+        #[arg(long)]
+        steam_root: Option<PathBuf>,
+    },
     /// Check headless runtime and SQLite without making network requests.
     Doctor {
         #[arg(long)]
@@ -134,6 +140,19 @@ async fn main() {
 
 async fn run(command: Command) -> Result<(Value, bool)> {
     Ok(match command {
+        Command::SteamAccounts { steam_root } => {
+            let report = if let Some(root) = steam_root {
+                dpda_steam_discovery::discover_in_roots(&[std::path::absolute(root)?])
+            } else {
+                dpda_steam_discovery::discover()
+            };
+            let report = serde_json::to_value(report)?;
+            let success = matches!(
+                report["status"].as_str(),
+                Some("found" | "not_installed" | "no_records")
+            );
+            (report, success)
+        }
         Command::Doctor { db } => {
             let report = dpda_debug::doctor(db.as_deref());
             let success = report.pointer("/sqlite/status").and_then(Value::as_str) == Some("ok")

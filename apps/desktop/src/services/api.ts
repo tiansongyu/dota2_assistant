@@ -1,7 +1,14 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import heroes from '../../../../assets/heroes.json';
-import type { AppSettings, AppSnapshot, CaptureDiagnostics, Draft, PoolConfig } from '../types';
+import type {
+  AppSettings,
+  AppSnapshot,
+  CaptureDiagnostics,
+  Draft,
+  PoolConfig,
+  SteamDiscoveryReport,
+} from '../types';
 
 export const desktopAvailable = isTauri();
 export const emptySnapshot: AppSnapshot = {
@@ -79,6 +86,7 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 }
 export const api = {
   snapshot: () => call<AppSnapshot>('get_snapshot'),
+  discoverSteamAccounts: () => call<SteamDiscoveryReport>('discover_steam_accounts'),
   saveAccount: (input: string) => call<void>('save_account', { input }),
   startSync: (fromTime: number, toTime: number) => call<void>('start_sync', { fromTime, toTime }),
   pauseSync: () => call<void>('pause_sync'),

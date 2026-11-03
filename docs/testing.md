@@ -16,6 +16,10 @@
 
 此次证明数据展示、真实 IPC 和规则计算管线可用；尚未建立真实一至五号位标签集，不能据此报告位置推断准确率。Linux 调试仍不包含 DOTA2 游戏捕获。
 
+## 本机 Steam 账号发现
+
+本轮检测、候选选择与真实 Linux 原生验证见 [专项报告](reports/steam-account-discovery.md)。浏览器合成 IPC 与真实本机读取分别记录；测试结果不能用作 Steam 身份认证。
+
 ## 已执行
 
 | 检查 | 环境与结果 | 边界 |
@@ -55,7 +59,7 @@ scripts/check.sh
 
 ```bash
 cargo test -p dpda-domain -p dpda-data-provider -p dpda-persistence -p dpda-history \
-  -p dpda-statistics -p dpda-hero-pool -p dpda-recommender -p dpda-debug
+  -p dpda-statistics -p dpda-hero-pool -p dpda-recommender -p dpda-steam-discovery -p dpda-debug
 ```
 
 网络请求只在显式运行 CLI 或 example 时发生，不作为普通单元测试隐式访问外网。API smoke 可用 [Linux 调试指南](linux-debug.md) 中的命令，凭证缺失必须显示 `not_configured`。

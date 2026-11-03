@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise a real Linux Tauri binary through W3C WebDriver in an isolated home.
+"""Exercise a real Linux Tauri binary through W3C WebDriver with isolated app data.
 
 No IPC mocks or external API requests are used. An optional existing SQLite
 database is copied with SQLite backup; the source is opened read-only.
@@ -242,6 +242,35 @@ def run(args, work):
             driver.screenshot(work / "game-assets.png")
         driver.invoke("save_account", {"input": "0"}, should_fail=True)
         check("invalid_account_does_not_mutate_profile", driver.invoke("get_snapshot")["profile"] is None)
+        if args.steam_discovery:
+            discovered = driver.invoke("discover_steam_accounts")
+            candidates = discovered["candidates"]
+            check("native_steam_discovery_contract", discovered["status"] in {
+                "found", "partial", "not_installed", "no_records", "permission_denied",
+                "invalid_format", "io_error", "unsupported_platform"}, {
+                    "status": discovered["status"], "candidate_count": len(candidates),
+                    "locations_checked": discovered["locations_checked"],
+                })
+            check("discovery_does_not_change_active_account",
+                  driver.invoke("get_snapshot")["profile"] is None)
+            check("discovered_steam64_preserves_precision", all(
+                isinstance(candidate["steam64"], str)
+                and candidate["steam64"] == str(STEAM64_BASE + candidate["account_id"])
+                for candidate in candidates))
+            if candidates:
+                candidate = candidates[0]
+                driver.script("Array.from(document.querySelectorAll('nav button')).find(b => b.textContent.trim() === '总览').click(); return true;")
+                driver.wait_script("return !!document.querySelector('input[name=\"steam-account\"]');")
+                driver.script("Array.from(document.querySelectorAll('input[name=\"steam-account\"]')).find(e => e.value === arguments[0]).click(); return true;",
+                              [str(candidate["account_id"])])
+                driver.wait_script("return Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === '使用此账号' && !b.disabled);")
+                driver.script("Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === '使用此账号').click(); return true;")
+                driver.wait_script("return document.body.innerText.includes(arguments[0]);",
+                                   [f"Account {candidate['account_id']}"])
+                check("native_detected_account_selected_without_typing",
+                      driver.invoke("get_snapshot")["profile"]["steam64"] == candidate["steam64"])
+            # The actual discovered identity is never written into this report or screenshots.
+            # Restore the explicit public test account below before the remaining UI checks.
         driver.invoke("save_account", {"input": str(STEAM64_BASE + account)})
         snapshot = driver.invoke("get_snapshot")
         check("steam64_is_exact_string", snapshot["profile"] == {
@@ -356,6 +385,7 @@ def main():
     parser.add_argument("--account", required=True, help="Explicit public test account ID; never a user default")
     parser.add_argument("--fixture-db", help="Optional existing database with real imported matches; opened read-only")
     parser.add_argument("--game-assets", action="store_true", help="Verify bundled PNG/SVG icons, local manifest CSP, and the resource browser")
+    parser.add_argument("--steam-discovery", action="store_true", help="Check actual local Steam discovery and account selection; omit discovered identities from reports")
     parser.add_argument("--output", type=Path, help="New output directory; must not already exist")
     args = parser.parse_args()
     if platform.system() != "Linux":

@@ -17,6 +17,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "tauri": "tauri",
     "test:ui": "node tests/ui-smoke.mjs",
+    "test:steam": "node tests/steam-discovery-smoke.mjs",
     "format:check": "prettier --check src tests vite.config.ts eslint.config.js",
     "format": "prettier --write src tests vite.config.ts eslint.config.js"
   },

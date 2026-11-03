@@ -83,6 +83,7 @@ try {
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('navigation').getByRole('button', { name: '总览', exact: true }).click();
+  await page.locator('.manual-account > summary').click();
   await page.getByLabel('Steam32 Account ID 或 Steam64 ID', { exact: true }).fill('invalid');
   await page.getByRole('button', { name: '关联账号', exact: true }).click();
   await page.getByText('请输入纯数字 Steam32 或 Steam64 ID。').waitFor();

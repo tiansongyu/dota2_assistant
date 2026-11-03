@@ -134,6 +134,29 @@ export interface Profile {
   account_id: number;
   steam64: string;
 }
+/** Local Steam records, not online presence or proof of account ownership. */
+export interface SteamAccountCandidate {
+  account_id: number;
+  steam64: string;
+  display_name: string | null;
+  most_recent: boolean;
+  last_used_at: number | null;
+}
+export interface SteamDiscoveryReport {
+  status:
+    | 'found'
+    | 'partial'
+    | 'not_installed'
+    | 'no_records'
+    | 'permission_denied'
+    | 'invalid_format'
+    | 'io_error'
+    | 'unsupported_platform';
+  candidates: SteamAccountCandidate[];
+  suggested_account_id: number | null;
+  diagnostics: { code: string; source: string; message: string }[];
+  locations_checked: number;
+}
 export interface SyncProgress {
   account_id: number | null;
   status: string;

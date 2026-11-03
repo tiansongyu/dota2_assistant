@@ -62,6 +62,13 @@ fn pool_key(id: u32) -> String {
 }
 
 #[tauri::command]
+async fn discover_steam_accounts() -> Result<dpda_steam_discovery::DiscoveryReport, String> {
+    tauri::async_runtime::spawn_blocking(dpda_steam_discovery::discover)
+        .await
+        .map_err(|_| "无法完成本机 Steam 账号检测，请重试。".to_string())
+}
+
+#[tauri::command]
 async fn get_snapshot(state: State<'_, AppState>) -> Result<Value, String> {
     let path = state.path.clone();
     let runtime = state.runtime.clone();
@@ -631,6 +638,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
+            discover_steam_accounts,
             save_account,
             start_sync,
             pause_sync,

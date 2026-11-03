@@ -2,6 +2,20 @@
 
 更新：2026-11-03。已发布 [v0.1.0-dev.1](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1)，提供 Windows 安装包与 Linux 调试工具；代码完成、自动化通过和游戏验收分别标记。
 
+## 自动发现本机 Steam 账号
+
+已完成：独立只读发现模块、桌面自动列出与预选账号、多账号选择、重试和手动回退、已有账号显式切换；Linux CLI 新增 `steam-accounts`。Steam64 保持字符串，发现结果不作为登录认证。
+
+新增/修改文件：`crates/steam-discovery`、Tauri IPC、CLI、AccountSetup、接口类型、界面与原生测试，以及 [账号发现说明](steam-account-discovery.md)。
+
+测试结果：Linux 92 项 Rust、70 项 Python 测试、格式/静态检查和前端/Tauri 构建通过；19 项发现合成测试、6 组专项浏览器测试通过。真实本机 CLI 与原生 UI 检测/选择/保存通过，原生共 33 项检查。详情见 [验收记录](reports/steam-account-discovery.md)。
+
+尚未验证：Windows 真实 Steam 客户端账号切换与并发文件更新、Flatpak 实机；Windows CI 结果按提交记录补充。
+
+存在问题：本机记录可能过期，多候选无唯一依据时需用户选择；读取错误时不擅自预选。Steam 配置格式没有稳定公开契约，保留手工 ID 兜底。
+
+下一阶段：完成 Windows/Linux CI，继续 Windows Steam 实机与原有游戏验收。
+
 ## Windows 图标构建修复
 
 已完成：定位失败清单中的秘法鞋重定向拒绝，以及另外四张图片与资源锁的字节差异；默认下载改为有归档、清单和资源锁 SHA-256 的固定快照，保留独立 CDN 更新工具。快照已放到 [资源发布页](https://github.com/tiansongyu/dota2_assistant/releases/tag/game-icons-20261103-v1)，不修改旧应用安装包。

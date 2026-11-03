@@ -10,6 +10,7 @@ DPDA 采用 Tauri 2 + Rust + React/TypeScript + SQLite。本地数据库是个�
 
 | 模块 | 职责与依赖 |
 | --- | --- |
+| `steam-discovery` | 只读本机 Steam 账号候选、路径去重、有界 VDF 解析；不作身份认证、不联网 |
 | `domain` | 稳定英雄 ID、比赛记录、账号规范化；跨 IPC 的 match_id/Steam64 均用字符串 |
 | `data-provider` | OpenDota HTTP、超时、限流、解析；静态英雄资料 |
 | `persistence` | SQLite 迁移、参数化查询、事务、同步断点、设置 |

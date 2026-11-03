@@ -13,6 +13,7 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["signal"] }
 reqwest.workspace = true
 dpda-domain.workspace = true
+dpda-steam-discovery.workspace = true
 dpda-data-provider.workspace = true
 dpda-persistence.workspace = true
 dpda-history.workspace = true

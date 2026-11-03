@@ -24,6 +24,7 @@ tracing.workspace = true
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
 dpda-domain.workspace = true
+dpda-steam-discovery.workspace = true
 dpda-persistence.workspace = true
 dpda-history.workspace = true
 dpda-data-provider.workspace = true

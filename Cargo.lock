@@ -861,6 +861,7 @@ dependencies = [
  "dpda-history",
  "dpda-persistence",
  "dpda-recommender",
+ "dpda-steam-discovery",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
@@ -882,6 +883,7 @@ dependencies = [
  "dpda-history",
  "dpda-persistence",
  "dpda-recommender",
+ "dpda-steam-discovery",
  "dpda-vision",
  "serde",
  "serde_json",
@@ -967,6 +969,19 @@ name = "dpda-statistics"
 version = "0.1.0"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "dpda-steam-discovery"
+version = "0.1.0"
+dependencies = [
+ "dpda-domain",
+ "libc",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.21",
+ "winreg",
 ]
 
 [[package]]

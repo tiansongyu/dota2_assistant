@@ -20,6 +20,17 @@ python3 scripts/start-linux-debug.py \
 
 总览显示历史位置分布、证据覆盖和未知样本；“我的英雄池”展示自动候选与手动覆盖；“历史战绩”提供 25/50/100 场分页、页码跳转、逐场全部已保存字段、位置推断理由和 JSON。原始缺失字段仍为 `null`。界面与 CLI 数据集相同；不把未保存的上游字段伪装成已经获取。
 
+## 自动发现本机 Steam 账号
+
+```bash
+cargo build --locked -p dpda-debug
+target/debug/dpda-debug steam-accounts
+# 非标准安装：只检查指定 Steam 根目录
+target/debug/dpda-debug steam-accounts --steam-root /path/to/Steam
+```
+
+命令只读本地账号列表，不联网、不创建数据库。图形界面会自动显示候选，不必复制 ID；多账号可选择，已有账号通过设置切换。输出含账号 ID 与昵称，勿直接作为公开测试 fixture 提交。详见 [账号发现](steam-account-discovery.md)。
+
 ## 自动分析位置
 
 以下命令使用当前源码构建的 CLI；`v0.1.0-dev.1` 下载包不含 `roles` 子命令。当前数据库 Schema 为 2，升级前请保留备份，旧包不能读取新 Schema。

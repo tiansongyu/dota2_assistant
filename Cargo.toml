@@ -20,6 +20,7 @@ rusqlite = { version = "0.41", features = ["bundled"] }
 tracing = "0.1"
 tempfile = "3"
 dpda-domain = { path = "crates/domain" }
+dpda-steam-discovery = { path = "crates/steam-discovery" }
 dpda-statistics = { path = "crates/statistics" }
 dpda-persistence = { path = "crates/persistence" }
 dpda-data-provider = { path = "crates/data-provider" }

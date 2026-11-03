@@ -118,7 +118,7 @@ strong {
 svg {
   flex-shrink: 0;
 }
-input:not([type='checkbox']):not([type='range']),
+input:not([type='checkbox']):not([type='range']):not([type='radio']),
 select,
 textarea {
   min-height: 39px;
@@ -134,7 +134,8 @@ input::placeholder,
 textarea::placeholder {
   color: var(--subtle);
 }
-input[type='checkbox'] {
+input[type='checkbox'],
+input[type='radio'] {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
@@ -597,6 +598,7 @@ main:focus {
 }
 .setup-content {
   flex: 1;
+  min-width: 0;
   padding: 28px 32px;
 }
 .section-kicker {
@@ -648,6 +650,165 @@ main:focus {
 }
 .account-setup.compact .setup-content h2 {
   font-size: 18px;
+}
+.current-account {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+.current-account > div {
+  display: flex;
+  flex: 1;
+  min-width: 180px;
+  flex-direction: column;
+  gap: 5px;
+  overflow-wrap: anywhere;
+}
+.current-account strong {
+  font-size: 13px;
+}
+.current-account span,
+.account-select-actions > span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.account-picker {
+  margin-top: 20px;
+}
+.steam-discovery-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.steam-discovery-heading h3 {
+  font-size: 13px;
+}
+.discovery-message {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+.discovery-error {
+  display: block;
+}
+.discovery-error > span {
+  display: block;
+  margin-top: 6px;
+  color: var(--dire);
+}
+.steam-candidates {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.steam-candidates > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.steam-candidate {
+  display: flex;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  align-items: center;
+}
+.steam-candidate:hover,
+.steam-candidate:focus-within {
+  border-color: var(--accent);
+}
+.steam-candidate.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+}
+.steam-candidate-info {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.steam-candidate-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.steam-candidate-title strong {
+  font-size: 13px;
+}
+.steam-candidate-title > span {
+  font-size: 10px;
+  color: var(--accent);
+}
+.steam-candidate-info > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.steam-candidate-info small {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--subtle);
+}
+.account-select-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 14px;
+}
+.discovery-diagnostics,
+.manual-account {
+  margin-top: 14px;
+  font-size: 12px;
+}
+.manual-account {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.discovery-diagnostics summary,
+.manual-account summary {
+  cursor: pointer;
+  color: var(--muted);
+  width: fit-content;
+  padding: 5px 0;
+}
+.manual-account .account-form {
+  margin-top: 12px;
+}
+.discovery-diagnostics ul {
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.discovery-diagnostics code {
+  display: block;
+  color: var(--subtle);
+  font-size: 10px;
 }
 .metric-grid {
   display: grid;

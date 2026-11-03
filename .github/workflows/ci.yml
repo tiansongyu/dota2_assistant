@@ -40,6 +40,10 @@ jobs:
         run: npm --prefix apps/desktop run assets:verify -- --require-lock
       - run: npm --prefix apps/desktop run test:assets
       - run: scripts/check.sh
+      - name: Steam account UI state regression (synthetic IPC)
+        run: npm --prefix apps/desktop run test:steam
+        env:
+          DPDA_CHROME_PATH: /usr/bin/google-chrome
       - name: Verify production static asset copy
         run: npm --prefix apps/desktop run assets:verify -- --check-dist --require-lock
       - name: Build independent Linux API diagnostic binary
