@@ -51,4 +51,3 @@ CREATE TABLE import_failures (
  observed_at INTEGER NOT NULL,
  PRIMARY KEY(account_id,record_key)
 );
-
