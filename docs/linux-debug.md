@@ -1,6 +1,36 @@
-# Linux 无界面调试工具
+# Linux 数据与界面调试
 
 `dpda-debug` 在 Linux 命令行中验证公开历史接口、同步 SQLite、检查个人英雄统计和执行时间顺序回测。它调用与桌面相同的 Rust 业务模块，不依赖 GTK、WebKit、OpenCV、Node 或显示服务器。游戏画面捕获和悬浮窗仍属于 Windows 桌面应用。
+
+## 打开已有数据的图形界面
+
+当前 `main` 提供 Linux 图形调试启动脚本；它不包含 Linux 游戏捕获。先按 [README](../README.md#ubuntu-2204--2404-调试-ui) 安装 Tauri/Linux 依赖，并执行 `npm ci --prefix apps/desktop`。在 Linux 图形桌面终端、仓库根目录运行：
+
+```bash
+python3 scripts/start-linux-debug.py \
+  --db ./local/dpda.db --account YOUR_STEAM32_OR_STEAM64 --build
+```
+
+`--db` 必须指向已导入的 DPDA SQLite。脚本使用 SQLite backup API，将数据库完整复制到 `~/.local/share/dpda-debug-sessions/` 下的新会话目录，选中账号并启动真实 Tauri 窗口。源库不被修改；默认位置为自动分析，已有手动设置则保留。输出的 `resume_command` 可直接复制执行，再次打开同一会话并保留设置；不要每次都创建新副本。
+
+已构建最新桌面二进制时可省略 `--build`。没有显示服务器时用 `--prepare-only` 只准备副本，或使用下方 CLI。仅 `npm run dev` 是浏览器预览，不能读取本地数据库。
+
+总览显示历史位置分布、证据覆盖和未知样本；“我的英雄池”展示自动候选与手动覆盖；“历史战绩”提供 25/50/100 场分页、页码跳转、逐场全部已保存字段、位置推断理由和 JSON。原始缺失字段仍为 `null`。界面与 CLI 数据集相同；不把未保存的上游字段伪装成已经获取。
+
+## 自动分析位置
+
+以下命令使用当前源码构建的 CLI；`v0.1.0-dev.1` 下载包不含 `roles` 子命令。当前数据库 Schema 为 2，升级前请保留备份，旧包不能读取新 Schema。
+
+```bash
+cargo build --locked -p dpda-debug
+target/debug/dpda-debug roles --db ./local/dpda.db --account YOUR_STEAM_ID
+target/debug/dpda-debug roles --db ./local/dpda.db --account YOUR_STEAM_ID \
+  --refresh --max-matches 240
+```
+
+第一条 `roles` 只分析缓存；`--refresh` 才发请求补充缺少的比赛详情。采样优先近期比赛，再按英雄轮询，遵守 OpenDota 限流；每次上限 1—3000 条，可用 Ctrl-C 暂停。重新执行跳过已有缓存，`partial` 表示预算内采样完成，不表示所有比赛都有位置证据。程序不提交回放解析请求。
+
+推断使用完整同队五人的早期经济/补刀与分路；缺早期数据时仅用有限可信的终局指标。四/五号位不能可靠区分时保留并列；缺分路的核心可保留一/二/三号位候选，每英雄至少 3 场符合条件的证据才自动用于候选过滤。该规则不是已校准位置模型，详见 [英雄池](hero-pool.md)。普通历史同步完成后自动补充最多 120 条详情，总览按钮每次最多 240 条；普通启动仅读缓存。
 
 ## 构建与自检
 

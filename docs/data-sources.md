@@ -17,7 +17,7 @@
 
 源码核对基于 [odota/core commit 8d774ab](https://github.com/odota/core/tree/8d774abda8542390fbd215487d961f1b5c3a3ef3)。`svc/api/requests/playerParams.ts` 定义 `limit`、`offset`、`date`（过去多少天）和 `project`；`svc/util/buildPlayer.ts` 默认按 `match_id` 降序排序后切片。玩家比赛端点不支持比赛 ID 游标；其他端点出现的 `less_than_match_id` 不能套用到这里。
 
-显式传 `project` 会替换默认附加列，因此客户端逐一请求所需列。`heroes` 是以 `player_slot` 为键的对象，不是英雄 ID 数组。导入时只保留英雄及阵营，不保存队友、对手的账号资料。未请求或未返回的字段保存为 `NULL`。`lane_role` 表示分路类型，不等于一至五号位；缺少可靠位置证据时使用手动位置配置。详情返回 `patch`，但实际玩家投影未返回该字段；不把缺省 patch 编造为当前版本。
+显式传 `project` 会替换默认附加列，因此客户端逐一请求所需列。`heroes` 是以 `player_slot` 为键的对象，不是英雄 ID 数组。导入时只保留英雄及阵营，不保存队友、对手的账号资料。未请求或未返回的字段保存为 `NULL`。`lane_role` 表示分路类型，不等于一至五号位；当前结合同队经济、补刀和分路形成规则候选；缺少证据保持未知，允许继续补充详情或手动覆盖。详情返回 `patch`，但实际玩家投影未返回该字段；不把缺省 patch 编造为当前版本。
 
 ### 配额、恢复与覆盖
 
@@ -46,3 +46,9 @@ OpenDota core 代码使用 MIT；官方 FAQ 明确代码可用于个人及商业
 上游英雄 JSON 含 Valve CDN 的头像相对路径，网站头像与实际选人槽位可能裁剪、灰度、边框不同，不能直接宣称匹配精度。MIT 覆盖仓库软件的许可声明不能替代 Valve 美术资源权利确认；本项目不把图片标为 MIT。模板下载、版本、来源和哈希应独立登记；真实截图测试还需要用户授权采集或有明确来源的素材。
 
 更新时先获取新的目录到临时文件，校验唯一且非零的英雄 ID、保留已有 ID 映射，记录来源 commit 后再替换。不要把数组下标当作英雄 ID，也不要从 Carry/Support 标签推断确定的五号位位置。
+
+## 位置证据详情
+
+`GET /matches/{match_id}` 只用于已在个人历史中的比赛。客户端核对 match_id、本人槽位/英雄和已公开的本人账号，只缓存同队五人的最小资源字段，不保留队友账号、昵称、聊天或整个原始响应。10—12 分钟均值从 `gold_t` / `lh_t` 的对应样本计算；缺失保持空值。终局 GPM/补刀回退只有有限规则可信度。
+
+字段与算法输入依据：[OpenDota MatchResponse](https://github.com/odota/core/blob/master/svc/api/responses/MatchResponse.ts)、[OpenDota compute.ts](https://github.com/odota/core/blob/master/svc/util/compute.ts)。DPDA 不直接把上游 `position_est` 当作已验证位置，也不为取得数据提交回放解析。当前采样有请求预算，详见 [Linux 调试](linux-debug.md#自动分析位置)。

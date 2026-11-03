@@ -1,6 +1,6 @@
 # 本地数据库
 
-实现：`crates/persistence`。Schema 当前版本为 1，DDL 保存在 `crates/persistence/migrations/001_initial.sql`；`PRAGMA user_version` 保存版本号。打开数据库时检查完整性、拒绝高于当前支持版本的数据库，并在事务内执行迁移。迁移失败不会留下半张表。
+实现：`crates/persistence`。Schema 当前版本为 2，DDL 位于 `crates/persistence/migrations/`，新增 `002_role_evidence.sql` 保存位置证据；`PRAGMA user_version` 保存版本号。打开数据库时检查完整性、拒绝高于当前支持版本的数据库，并按版本在事务内执行迁移。升级保留已有历史；旧二进制不能读取 Schema 2，调试前应保留备份或使用隔离启动脚本。
 
 SQLite 使用 WAL、外键约束、5 秒 busy timeout。同步工作线程和界面查询各自打开一个连接，避免把 `Connection` 跨线程共享。数据库损坏时返回错误，软件不能自动删除或覆盖旧文件。
 
@@ -16,6 +16,7 @@ SQLite 使用 WAL、外键约束、5 秒 busy timeout。同步工作线程和界
 | `settings` | 规模较小的用户配置 JSON，例如英雄池、位置、权重、校准区域 | `key` |
 | `sync_jobs` | 固定日期范围、分页偏移、同步状态和实际计数 | `account_id` |
 | `import_failures` | 无法解析的比赛标识、原因、发现时间 | `(account_id, record_key)` |
+| `role_evidence` | 同队五人的最小位置证据 JSON、来源和采集时间；不含其他玩家账号 | `(account_id, match_id)`，关联个人比赛外键 |
 
 账号输入只创建本地公开数据分析记录，不表示 Steam 身份认证。Steam64 与 match_id 使用 `TEXT`，跨 IPC 也使用字符串。英雄 ID 为稳定的整数，不使用目录下标。
 
@@ -24,6 +25,8 @@ SQLite 使用 WAL、外键约束、5 秒 busy timeout。同步工作线程和界
 KDA、GPM、XPM、patch、分路和比赛结果缺失时保存 `NULL`。胜负由有效 `player_slot` 和 `radiant_win` 共同确定，两者缺失时不计入已知结果分母。`lane_role` 是数据源分路标签，不自动转换为一至五号位。
 
 `match_heroes.side=ally` 不包含账号本人英雄。`lineup_complete=true` 表示导入器已核对 10 个合法槽位、10 个不同英雄及本人槽位；推荐器应按完整度决定能否用于阵容分析。数据库不保存队友或对手的账号资料，不保存整个比赛原始 JSON。聚合统计由本地事实重新计算；尚未建立独立统计快照表，避免重复事实失去同步。
+
+`role_evidence` 仅保留同队槽位、英雄、分路、GPM、补刀、10—12 分钟经济/补刀均值和上游推断标签。上游 `position_est` 不当作真实标签；本地规则版本和解释由分析器生成。`settings` 中 `role_sync:ACCOUNT_ID` 记录详情请求进度；预算完成且仍有未缓存比赛时为 `partial`。自动位置结果实时计算，用户 `pool.roles` 只保存显式覆盖；缺 key 表示自动，空数组表示禁止该英雄所有位置。
 
 ## 导入与恢复
 
