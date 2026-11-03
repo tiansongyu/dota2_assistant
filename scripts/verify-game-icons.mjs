@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Offline build gate. The downloader owns network requests and PNG decoding.
+// Offline build gate. Explicit --sync restores the pinned archive, never the live CDN.
 import { createHash } from "node:crypto";
 import {
   existsSync,
@@ -26,7 +26,7 @@ const categories = new Set([
 ]);
 const statuses = ["downloaded", "not_found", "skipped", "failed"];
 const guidance =
-  "请执行 npm --prefix apps/desktop run assets:sync 下载资源，再重试。";
+  "请执行 npm --prefix apps/desktop run assets:sync 恢复固定资源快照，再重试。";
 
 function ensure(condition, message) {
   if (!condition) throw new Error(message);
@@ -170,6 +170,7 @@ function verifyPublicDirectory(publicRoot) {
   const allowed = new Set([
     "game-icons",
     "game-icons.lock.json",
+    "game-icons.snapshot.json",
     "heroes.json",
     "patches.json",
     "data-provenance.json",
@@ -376,35 +377,40 @@ export function verifyGameIcons({
   };
 }
 
-export function syncWithPython() {
-  const candidates = process.env.DPDA_PYTHON
-    ? [[process.env.DPDA_PYTHON]]
-    : process.platform === "win32"
+export function syncWithPython({
+  run = spawnSync,
+  environment = process.env,
+  platform = process.platform,
+} = {}) {
+  const candidates = environment.DPDA_PYTHON
+    ? [[environment.DPDA_PYTHON]]
+    : platform === "win32"
       ? [["py", "-3"], ["python"], ["python3"]]
       : [["python3"], ["python"]];
   for (const [command, ...prefix] of candidates) {
-    const probe = spawnSync(
+    const probe = run(
       command,
       [
         ...prefix,
         "-c",
         "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)",
       ],
-      { cwd: repository, stdio: "ignore", windowsHide: true },
+      { cwd: repository, stdio: "ignore", windowsHide: true, env: environment },
     );
     if (probe.error || probe.status !== 0) continue;
-    const download = spawnSync(
+    const download = run(
       command,
-      [...prefix, path.join(repository, "scripts/fetch-game-icons.py")],
+      [...prefix, path.join(repository, "scripts/fetch-locked-game-icons.py")],
       {
         cwd: repository,
         stdio: "inherit",
-        env: { ...process.env, PYTHONUTF8: "1" },
+        env: { ...environment, PYTHONUTF8: "1" },
+        windowsHide: true,
       },
     );
     ensure(
       !download.error && download.status === 0,
-      `图标下载失败（退出码 ${download.status ?? "未启动"}），请查看下载器输出。`,
+      `固定资源快照恢复失败（退出码 ${download.status ?? "未启动"}），请查看下载器输出；不会回退到实时 CDN。`,
     );
     return;
   }
@@ -466,7 +472,9 @@ function main() {
   const verify = args.includes("--check-dist")
     ? verifyBuiltGameIcons
     : verifyGameIcons;
-  const report = verify({ requireLock: args.includes("--require-lock") });
+  const report = verify({
+    requireLock: args.includes("--require-lock") || args.includes("--sync"),
+  });
   const { unavailable, ...summary } = report;
   console.log(
     JSON.stringify({ ...summary, unavailable_entries: unavailable.length }),

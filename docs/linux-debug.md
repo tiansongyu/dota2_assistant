@@ -7,7 +7,7 @@
 当前 `main` 提供 Linux 图形调试启动脚本；它不包含 Linux 游戏捕获。先按 [README](../README.md#ubuntu-2204--2404-调试-ui) 安装 Tauri/Linux 依赖，并执行 `npm ci --prefix apps/desktop`。在 Linux 图形桌面终端、仓库根目录运行：
 
 ```bash
-python3 scripts/fetch-game-icons.py
+python3 scripts/fetch-locked-game-icons.py
 python3 scripts/start-linux-debug.py \
   --db ./local/dpda.db --account YOUR_STEAM32_OR_STEAM64 --build
 ```

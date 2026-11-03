@@ -46,7 +46,7 @@
 
 ```bash
 npm ci --prefix apps/desktop
-python3 scripts/fetch-game-icons.py
+python3 scripts/fetch-locked-game-icons.py
 npm --prefix apps/desktop run test:assets
 scripts/check.sh
 ```

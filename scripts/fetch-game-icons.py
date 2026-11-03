@@ -26,7 +26,14 @@ import zlib
 ROOT = Path(__file__).resolve().parents[1]
 REVISION = "5c0242df9057848fa2036ca3fafe9f2bd4508163"
 CDN = "https://cdn.cloudflare.steamstatic.com"
-IMAGE_BASE = CDN + "/apps/dota2/images/dota_react/"
+DOTA_IMAGE_PATH = "/apps/dota2/images/dota_react/"
+IMAGE_BASE = CDN + DOTA_IMAGE_PATH
+# Valve's dota2.com hero-page configuration and public/javascript/dota_react/main.js
+# enumerate these CDN hosts. This is an exact allowlist, never a suffix wildcard.
+IMAGE_CDN_HOSTS = frozenset({
+    "cdn.cloudflare.steamstatic.com", "cdn.steamstatic.com",
+    "cdn.akamai.steamstatic.com", "cdn.fastly.steamstatic.com",
+})
 CATALOG_NAMES = ("heroes", "abilities", "ability_ids", "items", "item_ids", "hero_abilities")
 MAX_IMAGE_BYTES = 4 * 1024 * 1024
 MAX_JSON_BYTES = 16 * 1024 * 1024
@@ -254,10 +261,42 @@ class TrustedRedirects(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, request, fp, code, message, headers, newurl):
         if self.stop_event is not None and self.stop_event.is_set():
             raise DownloadCancelled("download cancelled before redirect")
-        original = urllib.parse.urlsplit(request.full_url)
-        target = urllib.parse.urlsplit(newurl)
-        if target.scheme != "https" or target.hostname != original.hostname:
-            raise ValueError("cross-host or insecure redirect rejected")
+        try:
+            original = urllib.parse.urlsplit(request.full_url)
+            target = urllib.parse.urlsplit(newurl)
+        except ValueError:
+            # urllib's malformed-netloc error can include raw userinfo. Do not
+            # propagate that text into the public manifest or CI diagnostics.
+            raise ValueError("redirect rejected: invalid URL structure (origins unavailable)") from None
+        def origin(parsed):
+            # Diagnostics intentionally omit userinfo, paths, queries and fragments.
+            try:
+                port = ":" + str(parsed.port) if parsed.port is not None else ""
+            except ValueError:
+                port = ":invalid-port"
+            return f"{parsed.scheme}://{parsed.hostname or 'unknown-host'}{port}"
+
+        def reject(reason):
+            raise ValueError(f"redirect rejected: {reason} ({origin(original)} -> {origin(target)})")
+
+        if original.scheme != "https" or target.scheme != "https":
+            reject("HTTPS required")
+        if any(parsed.username is not None or parsed.password is not None for parsed in (original, target)):
+            reject("userinfo forbidden")
+        try:
+            ports_valid = all(parsed.port in (None, 443) for parsed in (original, target))
+        except ValueError:
+            ports_valid = False
+        if not ports_valid:
+            reject("nonstandard or invalid port")
+        if original.hostname in IMAGE_CDN_HOSTS and original.path.startswith(DOTA_IMAGE_PATH):
+            if target.hostname not in IMAGE_CDN_HOSTS:
+                reject("untrusted image CDN host")
+            if target.path != original.path:
+                reject("image asset path changed")
+        elif target.hostname != original.hostname:
+            # GitHub catalog requests never inherit the image-CDN allowlist.
+            reject("metadata/non-image host changed")
         return super().redirect_request(request, fp, code, message, headers, newurl)
 
 

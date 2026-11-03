@@ -47,15 +47,15 @@ jobs:
           $resources = @{ 'runtime/opencv_world4110.dll' = './opencv_world4110.dll'; 'runtime/OpenCV-LICENSE.txt' = './OpenCV-LICENSE.txt'; 'runtime/opencv-licenses/' = './opencv-licenses/'; 'runtime/THIRD_PARTY_LICENSES.txt' = './THIRD_PARTY_LICENSES.txt'; 'runtime/DPDA-LICENSE.txt' = './DPDA-LICENSE.txt' }
           @{ bundle = @{ resources = $resources } } | ConvertTo-Json -Depth 5 | Set-Content apps/desktop/src-tauri/bundle-windows.json
       - run: npm ci --prefix apps/desktop
-      - name: Cache generated Valve game icons
+      - name: Cache pinned game icon snapshot
         uses: actions/cache@v5
         with:
           path: assets/game-icons
-          key: ${{ runner.os }}-game-icons-v1-${{ hashFiles('scripts/fetch-game-icons.py', 'assets/game-icons.lock.json', 'assets/data-provenance.json') }}
-      - name: Download or validate cached game icons
+          key: ${{ runner.os }}-game-icons-v2-${{ hashFiles('assets/game-icons.snapshot.json', 'assets/game-icons.lock.json') }}
+      - name: Restore and verify pinned game icon snapshot
         env:
           PYTHONUTF8: "1"
-        run: python scripts/fetch-game-icons.py --workers 8 --rate 8
+        run: python scripts/fetch-locked-game-icons.py
       - name: Verify locked offline assets and explicit missing entries
         run: npm --prefix apps/desktop run assets:verify -- --require-lock
       - run: npm --prefix apps/desktop run test:assets

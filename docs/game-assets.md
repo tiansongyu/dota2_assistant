@@ -1,6 +1,6 @@
 # DOTA2 游戏图标
 
-图标从 Valve 的公开 CDN 下载，目录与稳定 ID 来自固定版本的 dotaconstants。下载不需要 Steam 登录，也不调用 OpenDota 战绩 API。英雄、技能、物品和命石目录不是“所有条目当前都能在普通比赛中使用”的证明；旧技能、内部条目和已移除物品可能仍保留在数据源中。
+图标原始来源是 Valve 的公开 CDN，目录与稳定 ID 来自固定版本的 dotaconstants。默认构建从 GitHub Release 恢复已验证的固定快照。下载不需要 Steam 登录，也不调用 OpenDota 战绩 API。英雄、技能、物品和命石目录不是“所有条目当前都能在普通比赛中使用”的证明；旧技能、内部条目和已移除物品可能仍保留在数据源中。
 
 2026-11-03 已实际下载 1,802 个图像文件，合计 55,247,287 字节（52.69 MiB）：127 张英雄肖像、127 张英雄小图、1,002 张技能图、458 张物品图、82 张命石图和 6 张辅助图。详细覆盖与测试见 [验收报告](reports/game-icons.md)。
 
@@ -9,14 +9,18 @@
 在仓库根目录执行。Linux 使用 Python 3，Windows 可将 `python3` 换成 `python`。
 
 ```bash
-python3 scripts/fetch-game-icons.py
+python3 scripts/fetch-locked-game-icons.py
 python3 scripts/fetch-game-icons.py --verify
 npm --prefix apps/desktop run assets:verify
 ```
 
-图像和完整清单保存在 `assets/game-icons/`，只下载未缓存或校验失败的文件。中断后再次运行同一条命令即可继续；已确认的 404 单独记录，常规重跑不会不断请求同一缺失图标。需要重新探测时显式使用 `--retry-missing`。网络故障和损坏文件不会被伪装成成功下载。
+图像和完整清单保存在 `assets/game-icons/`。默认从仓库发布页恢复固定快照：先核对归档大小、SHA-256 和当前资源锁，再安全解包并逐文件检查。完整且符合锁的缓存可直接离线复用；失败下载不会替换已有缓存。也可在安装前端依赖后执行 `npm --prefix apps/desktop run assets:sync`。
 
-Ctrl-C 会取消尚未开始的任务并保存未完成清单，等待在途请求结束或超时后以 130 退出。尚未完整下载的目录不能通过构建检查；再次运行下载命令即可恢复。
+不能联网时，在另一台机器下载 [资源快照](https://github.com/tiansongyu/dota2_assistant/releases/tag/game-icons-20261103-v1) 的 ZIP，复制到本机后运行：
+
+```bash
+python3 scripts/fetch-locked-game-icons.py --archive /path/to/game-icons-50bd326d0c66.zip
+```
 
 安装前端依赖后，通过桌面入口启动：
 
@@ -50,20 +54,24 @@ npm --prefix apps/desktop run tauri dev
 
 Vite 从仓库 `assets` 读取公开静态资源，将 `game-icons` 原样放入 `dist/game-icons`。Tauri 再随前端一起打包；不另加一份 `bundle.resources`，不要求最终用户联网逐张加载。CSP 只增加同源清单访问，不开放任意 CDN。
 
-图片和原始目录是可恢复的生成资源，不写入 Git。仓库跟踪下载器、元数据版本、来源说明和 `assets/game-icons.lock.json`；锁文件保存本次物理图片的来源、SHA-256 和大小。构建前检查锁与实际文件，避免缺图、损坏或源站替换被静默带入安装包。
+图片和原始目录不写入 Git；经过验证的 ZIP 保存在仓库的独立资源发布页。`assets/game-icons.lock.json` 锁定每张图片的来源、SHA-256 和大小，`assets/game-icons.snapshot.json` 锁定 ZIP、下载地址及对应锁文件。CI 与默认开发命令使用同一快照，不逐张访问可变的 Valve CDN。构建仍核对本地图片与锁，不能通过刷新锁自动接受远端变化。
 
-首次构建必须先下载资源；已有缓存时可离线校验和构建。CI 构建前恢复或下载图标，然后执行相同检查。CDN URL 不是永久内容地址，锁能发现字节变化，但不能保证源站永远提供旧文件；需要严格恢复旧版本时，应保留对应缓存或归档。
+首次构建需要下载快照；已有有效缓存后可离线构建。Valve CDN 可能在不同区域返回不同版本。2026-11-03 的 Windows 构建曾遇到跨域跳转和四张图片字节不同，因此新增固定快照恢复，见 [故障记录](reports/game-icons-build-fix.md)。
 
-更新资源时先审阅新的目录及下载结果，再显式刷新锁：
+原始 CDN 下载器保留给资源维护者。它支持限流、重试、缓存和中断恢复；已确认的 404 只有 `--retry-missing` 才重新请求。Ctrl-C 取消未开始任务，保存未完成清单并以 130 退出。若要更新已缓存的成功图片，请使用新的暂存目录；仅加 `--retry-missing` 不会重新下载成功文件。
+
+维护者在检查新目录和下载结果后更新资源锁，生成新的快照标签；下面的标签仅为命令示例，不应覆盖已发布快照：
 
 ```bash
-python3 scripts/fetch-game-icons.py --retry-missing
-python3 scripts/fetch-game-icons.py --verify
+python3 scripts/fetch-game-icons.py --output artifacts/new-game-icons --retry-missing
+python3 scripts/fetch-game-icons.py --output artifacts/new-game-icons --verify
+# 审阅覆盖变化并将完整暂存目录替换到 assets/game-icons 后：
 python3 scripts/lock-game-icons.py
+python3 scripts/pack-game-icons.py --release-tag game-icons-YYYYMMDD-vN
 npm --prefix apps/desktop run assets:verify
 ```
 
-锁更新会改变公开构建使用的资源快照，应与来源、缺失和变更记录一起提交。`assets` 是公开静态目录，不得放入账号数据库、访问密钥、个人截图或日志。
+`pack-game-icons.py` 先执行构建校验，再生成 ZIP 和新的快照描述文件；不自动上传或提交。将 ZIP、摘要及权利说明上传到描述文件所指的 GitHub Release，确认空目录恢复通过，再提交锁、描述文件、来源和变更记录。不得覆盖已有发布资源。`assets` 是公开静态目录，不得放入账号数据库、访问密钥、个人截图或日志。
 
 ## 来源与图像权利
 

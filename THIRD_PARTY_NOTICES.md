@@ -11,7 +11,7 @@ DPDA 原创代码见根目录 MIT LICENSE。以下许可仅覆盖各自项目，
 | OpenCV 与 Rust binding | 图像匹配 | OpenCV 4.x Apache-2.0；Rust binding MIT；Windows 包附 OpenCV license |
 | lucide-react | UI 图标 | ISC |
 | odota/dotaconstants | 英雄与 patch 静态目录 | MIT；原 notice 位于 assets/licenses/dotaconstants-MIT.txt |
-| Valve DOTA2 英雄、技能、物品及辅助图标 | 从官方 CDN 下载至生成目录，构建时随前端嵌入应用；图像不写入 Git | Valve 及相应权利人保留图像权利；来源和哈希见资源清单，不适用本项目 MIT，尚未取得单独商业再分发授权 |
+| Valve DOTA2 英雄、技能、物品及辅助图标 | 从官方 CDN 下载至生成目录，构建时随前端嵌入应用；经校验的 ZIP 另存资源发布页，图像不写入 Git | Valve 及相应权利人保留图像权利；来源和哈希见资源清单，不适用本项目 MIT，尚未取得单独商业再分发授权 |
 | OpenDota API 响应 | 最小真实测试 fixture | 公开历史，保留来源/日期；不包含聊天、昵称、访问凭证 |
 
 参考仓库仅用于研究。`bijankle/Dota_Draft_Assist` 未发现 LICENSE，不复制其代码；`gestevao04/dota-counterpick-overlay` 的 MIT 声明及局限见 [研究记录](docs/research-capture.md)。Outdraft 只作公开功能参考，不分发其安装包或页面素材。

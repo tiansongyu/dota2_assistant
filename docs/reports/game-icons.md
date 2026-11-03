@@ -52,4 +52,4 @@ node apps/desktop/tests/game-assets-smoke.mjs
 
 真实下载报告位于本机 `artifacts/game-icons/download-report.json`；浏览器报告与截图在 `artifacts/game-icons/ui/`；原生报告在 `artifacts/game-icons/native/`。这些路径不提交 Git。可公开重建的资源锁为 [game-icons.lock.json](../../assets/game-icons.lock.json)，操作说明见 [游戏资源](../game-assets.md)。
 
-本次没有验证 Windows WebView 的图像渲染；Windows CI 构建与安装结果需按对应提交另查。旧开发预览安装包未更新。图标下载和 UI 显示不证明 DOTA2 选人识别准确率、锁定识别或游戏 FPS；原有真实游戏验收状态不变。图像版权仍归 Valve 及相应权利人，不因打包或源码 MIT 获得单独商业授权。
+随后 Windows 构建发现 CDN 重定向和跨平台字节差异，修复及验证见 [构建故障记录](game-icons-build-fix.md)。本次没有验证 Windows WebView 的图像渲染；Windows CI 构建与安装结果需按对应提交另查。旧开发预览安装包未更新。图标下载和 UI 显示不证明 DOTA2 选人识别准确率、锁定识别或游戏 FPS；原有真实游戏验收状态不变。图像版权仍归 Valve 及相应权利人，不因打包或源码 MIT 获得单独商业授权。

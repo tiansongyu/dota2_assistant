@@ -27,15 +27,15 @@ jobs:
         run: rustup update stable && rustup default stable && rustup component add clippy rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: npm ci --prefix apps/desktop
-      - name: Cache generated Valve game icons
+      - name: Cache pinned game icon snapshot
         uses: actions/cache@v5
         with:
           path: assets/game-icons
-          key: ${{ runner.os }}-game-icons-v1-${{ hashFiles('scripts/fetch-game-icons.py', 'assets/game-icons.lock.json', 'assets/data-provenance.json') }}
-      - name: Download or validate cached game icons
+          key: ${{ runner.os }}-game-icons-v2-${{ hashFiles('assets/game-icons.snapshot.json', 'assets/game-icons.lock.json') }}
+      - name: Restore and verify pinned game icon snapshot
         env:
           PYTHONUTF8: "1"
-        run: python3 scripts/fetch-game-icons.py --workers 8 --rate 8
+        run: python3 scripts/fetch-locked-game-icons.py
       - name: Verify locked offline assets and explicit missing entries
         run: npm --prefix apps/desktop run assets:verify -- --require-lock
       - run: npm --prefix apps/desktop run test:assets

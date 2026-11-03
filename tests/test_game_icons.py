@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import unittest
+import urllib.request
 import zlib
 
 SPEC = importlib.util.spec_from_file_location("game_icons", Path(__file__).resolve().parents[1] / "scripts/fetch-game-icons.py")
@@ -163,6 +164,65 @@ class TestCatalog(unittest.TestCase):
         self.assertEqual(result["statuses"], {"downloaded": 2})
         self.assertEqual(result["unique_files"], 1)
         self.assertEqual(result["unique_bytes"], 50)
+
+
+class TestTrustedRedirects(unittest.TestCase):
+    def redirect(self, original, target):
+        return icons.TrustedRedirects().redirect_request(
+            urllib.request.Request(original), None, 302, "Found", {}, target)
+
+    def test_same_asset_https_redirect_and_metadata_same_host(self):
+        original = icons.IMAGE_BASE + "items/arcane_boots.png"
+        self.assertEqual(self.redirect(original, original).full_url, original)
+        metadata = "https://raw.githubusercontent.com/odota/dotaconstants/" + icons.REVISION + "/build/items.json"
+        self.assertEqual(self.redirect(metadata, metadata).full_url, metadata)
+
+    def test_metadata_does_not_inherit_image_cdn_allowlist(self):
+        metadata = "https://raw.githubusercontent.com/odota/dotaconstants/" + icons.REVISION + "/build/items.json"
+        for host in icons.IMAGE_CDN_HOSTS:
+            with self.subTest(host=host), self.assertRaises(ValueError):
+                self.redirect(metadata, "https://" + host + icons.DOTA_IMAGE_PATH + "items/arcane_boots.png")
+
+    def test_verified_valve_cdns_can_redirect_only_the_same_asset(self):
+        original = icons.IMAGE_BASE + "items/arcane_boots.png"
+        for host in icons.IMAGE_CDN_HOSTS:
+            for port in ("", ":443"):
+                target = "https://" + host + port + icons.DOTA_IMAGE_PATH + "items/arcane_boots.png"
+                with self.subTest(target=target):
+                    self.assertEqual(self.redirect(original, target).full_url, target)
+            wrong_path = "https://" + host + icons.DOTA_IMAGE_PATH + "items/different_item.png"
+            with self.assertRaises(ValueError):
+                self.redirect(original, wrong_path)
+
+    def test_rejection_diagnostics_never_expose_credentials_or_query(self):
+        original = icons.IMAGE_BASE + "items/arcane_boots.png?token=original_secret"
+        targets = ["https://user:password_secret@evil.invalid/private?token=query_secret",
+                   "https://user:password_secret@℀.invalid/private?token=query_secret"]
+        for index, target in enumerate(targets):
+            with self.subTest(target=target), self.assertRaises(ValueError) as raised:
+                self.redirect(original, target)
+            diagnostic = str(raised.exception)
+            if index == 0:
+                self.assertIn("https://cdn.cloudflare.steamstatic.com", diagnostic)
+                self.assertIn("https://evil.invalid", diagnostic)
+            for sensitive in ("original_secret", "password_secret", "query_secret", "token", "/private", "userinfo@"):
+                self.assertNotIn(sensitive, diagnostic)
+
+    def test_untrusted_image_redirect_destinations_are_rejected(self):
+        original = icons.IMAGE_BASE + "items/arcane_boots.png"
+        path = "/apps/dota2/images/dota_react/items/arcane_boots.png"
+        targets = [
+            "http://cdn.cloudflare.steamstatic.com" + path,
+            "https://cdn.cloudflare.steamstatic.com.evil.invalid" + path,
+            "https://arbitrary.steamstatic.com" + path,
+            "https://user:password@cdn.cloudflare.steamstatic.com" + path,
+            "https://cdn.cloudflare.steamstatic.com:8443" + path,
+            "https://cdn.cloudflare.steamstatic.com:invalid" + path,
+            icons.IMAGE_BASE + "items/different_item.png",
+        ]
+        for target in targets:
+            with self.subTest(target=target), self.assertRaises(ValueError):
+                self.redirect(original, target)
 
 
 class TestTransport(unittest.TestCase):

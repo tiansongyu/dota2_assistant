@@ -15,6 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  syncWithPython,
   verifyBuiltGameIcons,
   verifyGameIcons,
 } from "../scripts/verify-game-icons.mjs";
@@ -271,8 +272,117 @@ test("private or undeclared files are blocked from the public directory", (t) =>
   rmSync(path.join(f.root, "unlisted.png"));
   const publicRoot = path.dirname(f.root);
   assert.equal(f.verify({ publicRoot }).status, "verified");
+  writeFileSync(
+    path.join(publicRoot, "game-icons.snapshot.json"),
+    '{"synthetic_descriptor":true}',
+  );
+  assert.equal(f.verify({ publicRoot }).status, "verified");
   writeFileSync(path.join(publicRoot, "history.sqlite"), "synthetic-test-only");
   assert.throws(() => f.verify({ publicRoot }), /未批准/u);
+});
+
+test("explicit sync uses only the fixed snapshot loader and a shell-free Python executable", () => {
+  const calls = [];
+  const interpreter = "C:\\Synthetic Python\\python.exe";
+  syncWithPython({
+    environment: { DPDA_PYTHON: interpreter, SYNTHETIC_SETTING: "preserved" },
+    platform: "win32",
+    run(command, args, options) {
+      calls.push({ command, args, options });
+      return { status: 0 };
+    },
+  });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].command, interpreter);
+  assert.deepEqual(calls[0].args.slice(0, 1), ["-c"]);
+  assert.match(calls[0].args[1], /sys\.version_info >= \(3, 10\)/u);
+  assert.equal(calls[1].command, interpreter);
+  assert.equal(path.basename(calls[1].args[0]), "fetch-locked-game-icons.py");
+  assert.equal(calls[1].args.length, 1);
+  assert.equal(calls[1].options.env.PYTHONUTF8, "1");
+  assert.equal(calls[1].options.env.SYNTHETIC_SETTING, "preserved");
+  assert.notEqual(calls[1].options.shell, true);
+});
+
+test("Windows launcher prefix is retained and Python candidates are probed before running", () => {
+  const calls = [];
+  syncWithPython({
+    environment: {},
+    platform: "win32",
+    run(command, args) {
+      calls.push({ command, args });
+      return { status: 0 };
+    },
+  });
+  assert.equal(calls[0].command, "py");
+  assert.deepEqual(calls[0].args.slice(0, 2), ["-3", "-c"]);
+  assert.equal(calls[1].command, "py");
+  assert.equal(calls[1].args[0], "-3");
+  assert.equal(path.basename(calls[1].args[1]), "fetch-locked-game-icons.py");
+  const fallback = [];
+  syncWithPython({
+    environment: {},
+    platform: "linux",
+    run(command, args) {
+      fallback.push({ command, args });
+      return { status: command === "python3" ? 1 : 0 };
+    },
+  });
+  assert.deepEqual(
+    fallback.map((call) => call.command),
+    ["python3", "python", "python"],
+  );
+  assert.equal(
+    path.basename(fallback[2].args[0]),
+    "fetch-locked-game-icons.py",
+  );
+});
+
+test("snapshot failure is terminal and does not fall back to another interpreter or live downloader", () => {
+  const calls = [];
+  assert.throws(
+    () =>
+      syncWithPython({
+        environment: {},
+        platform: "win32",
+        run(command, args) {
+          calls.push({ command, args });
+          return { status: calls.length === 1 ? 0 : 1 };
+        },
+      }),
+    /固定资源快照恢复失败.*不会回退/u,
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(path.basename(calls[1].args[1]), "fetch-locked-game-icons.py");
+  assert.throws(
+    () =>
+      syncWithPython({
+        environment: { DPDA_PYTHON: "synthetic-missing-python" },
+        run() {
+          return { error: new Error("synthetic ENOENT"), status: null };
+        },
+      }),
+    /找不到 Python 3.10/u,
+  );
+});
+
+test("desktop pre-start and pre-build gates stay offline; network restore remains explicit", () => {
+  const packageJson = JSON.parse(
+    readFileSync(
+      new URL("../apps/desktop/package.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  for (const lifecycle of ["predev", "prebuild", "prepreview"])
+    assert.equal(packageJson.scripts[lifecycle], "npm run assets:verify");
+  assert.equal(
+    packageJson.scripts["assets:sync"],
+    "node ../../scripts/verify-game-icons.mjs --sync",
+  );
+  assert.equal(
+    packageJson.scripts["assets:verify"],
+    "node ../../scripts/verify-game-icons.mjs",
+  );
 });
 
 test(

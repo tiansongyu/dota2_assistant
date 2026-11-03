@@ -65,14 +65,14 @@ cargo build --locked --release -p dpda-debug
 sudo apt-get install build-essential pkg-config libwebkit2gtk-4.1-dev libgtk-3-dev \
   libayatana-appindicator3-dev librsvg2-dev libopencv-dev clang libclang-dev
 npm ci --prefix apps/desktop
-python3 scripts/fetch-game-icons.py
+python3 scripts/fetch-locked-game-icons.py
 cd apps/desktop
 npm run tauri dev
 ```
 
 Node 要求至少 22.12，建议 24 LTS。Linux 下可以验证同步、英雄池、手动 BP 和界面；捕获模块会明确报告 Windows 专用。`npm run dev` 只启动浏览器界面预览，不能调用数据库或真实同步。
 
-桌面构建与开发启动前需要完整的本地图标缓存；首次执行上述下载命令，之后可离线复用。Windows 使用 `python scripts/fetch-game-icons.py`。详细来源、校验与更新步骤见 [游戏资源说明](docs/game-assets.md)。
+桌面构建与开发启动前需要完整的本地图标缓存；首次执行上述命令恢复固定资源快照，之后可离线复用。Windows 使用 `python scripts/fetch-locked-game-icons.py`。详细来源、校验与更新步骤见 [游戏资源说明](docs/game-assets.md)。
 
 已有 CLI 数据库时，可从仓库根目录直接打开带真实数据的图形界面：
 
@@ -127,7 +127,7 @@ OpenDota 只能返回其可访问的比赛，不保证恢复私密或从未记�
 
 ```bash
 npm ci --prefix apps/desktop
-python3 scripts/fetch-game-icons.py
+python3 scripts/fetch-locked-game-icons.py
 ./scripts/check.sh
 ```
 

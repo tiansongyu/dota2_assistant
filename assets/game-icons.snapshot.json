@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "source_commit": "5c0242df9057848fa2036ca3fafe9f2bd4508163",
+  "lock_sha256": "50bd326d0c66f3823ed1b56c316e56a364a3e8eb9944759b02c1ff13ae32878e",
+  "manifest_sha256": "2eed0d4a46955c0ab25af5b25f331c9d6ad630a0645605d5001c984f613b8b7c",
+  "archive": {
+    "url": "https://github.com/tiansongyu/dota2_assistant/releases/download/game-icons-20261103-v1/game-icons-50bd326d0c66.zip",
+    "sha256": "2e356e6f7108db71a4892faaf789f7010b91cb485338c0731c27dc9bf9195224",
+    "bytes": 48810988
+  }
+}

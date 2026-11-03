@@ -2,6 +2,20 @@
 
 更新：2026-11-03。已发布 [v0.1.0-dev.1](https://github.com/tiansongyu/dota2_assistant/releases/tag/v0.1.0-dev.1)，提供 Windows 安装包与 Linux 调试工具；代码完成、自动化通过和游戏验收分别标记。
 
+## Windows 图标构建修复
+
+已完成：定位失败清单中的秘法鞋重定向拒绝，以及另外四张图片与资源锁的字节差异；默认下载改为有归档、清单和资源锁 SHA-256 的固定快照，保留独立 CDN 更新工具。快照已放到 [资源发布页](https://github.com/tiansongyu/dota2_assistant/releases/tag/game-icons-20261103-v1)，不修改旧应用安装包。
+
+新增/修改文件：`fetch-locked-game-icons.py`、`pack-game-icons.py`、`game-icons.snapshot.json`、原下载器、Node 门禁、Windows/Linux 工作流、测试与 [故障记录](reports/game-icons-build-fix.md)。
+
+测试结果：本地归档恢复、缓存离线复用、前端构建与 1,822 个公开文件逐文件校验通过。完整回归和新 Windows CI 结果见故障记录。
+
+尚未验证：Windows 实际游戏捕获、WebView 内容与清洁机器安装，仍沿用原验收边界。
+
+存在问题：原 CDN 缺失的 391 个条目和 24 个跳过条目仍如实保留；旧 Windows 日志没有重定向 Location，不能声称复现其目标域名。
+
+下一阶段：完成修复提交的 Windows/Linux CI，并继续原有实机验收。
+
 ## 游戏图标下载与程序接入
 
 已完成：实际下载 1,802 张英雄、技能、物品、命石和辅助图像；来源/哈希锁、断点恢复、共享图和缺失清单；替换英雄文字标记；增加无账号可用的资源页；开发、生产与 Tauri 离线打包集成。

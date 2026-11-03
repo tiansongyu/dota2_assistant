@@ -30,7 +30,7 @@ $env:OPENCV_LINK_LIBS = 'opencv_world4110'
 $env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'
 $env:PATH = 'C:\opencv\build\x64\vc16\bin;' + $env:PATH
 npm ci --prefix apps/desktop
-python scripts/fetch-game-icons.py
+python scripts/fetch-locked-game-icons.py
 cd apps/desktop
 npm run tauri dev
 ```
