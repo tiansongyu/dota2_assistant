@@ -40,6 +40,18 @@ python3 scripts/native-smoke.py --application target/debug/dpda-desktop \
 
 本次本地报告位于 `artifacts/steam-discovery/`，不提交 Git。专项界面脚本会写入该目录的 `ui-synthetic` 子目录，素材和昵称均明确标为合成测试。
 
+## Windows 与 Linux CI
+
+提交 `c427b02` 的 [Windows CI](https://github.com/tiansongyu/dota2_assistant/actions/runs/41614855078) 与 [Linux CI](https://github.com/tiansongyu/dota2_assistant/actions/runs/41614855026) 均通过。Linux CI 也实际执行了新增的六组账号界面回归。Windows 完成严格 Clippy、Rust/Python/Node 测试、NSIS 构建、静默安装和安装后进程启动检查。
+
+已下载 Windows 安装包并与 CI 的摘要文件核对一致：
+
+- 文件：`Dota Personal Draft Assistant_0.1.0_x64-setup.exe`
+- 大小：62968539 字节
+- SHA-256：`f7feecbff5161a845146cce99a15fb64b5044d06287578685960b1a832c70c59`
+
+安装包位于该 Windows 工作流的 `dpda-windows-nsis-unsigned` artifact。旧 `v0.1.0-dev.1` 应用下载包未替换。
+
 ## 待验证
 
-Windows CI 结果按修复提交另行补录。Windows 实机上 Steam 登录切换、退出后的记录更新、权限差异和并发写入仍待验证；Flatpak 安装目录也未做真实安装验收。`MostRecent` 只是本机记录提示，不能证明当前登录状态。此前 DOTA2 选人识别、性能与清洁机器验收边界不变。
+Windows 实机上 Steam 登录切换、退出后的记录更新、权限差异和并发写入仍待验证；Flatpak 安装目录也未做真实安装验收。`MostRecent` 只是本机记录提示，不能证明当前登录状态。此前 DOTA2 选人识别、性能与清洁机器验收边界不变。

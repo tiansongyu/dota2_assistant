@@ -8,13 +8,13 @@
 
 新增/修改文件：`crates/steam-discovery`、Tauri IPC、CLI、AccountSetup、接口类型、界面与原生测试，以及 [账号发现说明](steam-account-discovery.md)。
 
-测试结果：Linux 92 项 Rust、70 项 Python 测试、格式/静态检查和前端/Tauri 构建通过；19 项发现合成测试、6 组专项浏览器测试通过。真实本机 CLI 与原生 UI 检测/选择/保存通过，原生共 33 项检查。详情见 [验收记录](reports/steam-account-discovery.md)。
+测试结果：Linux 92 项 Rust、70 项 Python 测试、格式/静态检查和前端/Tauri 构建通过；19 项发现合成测试、6 组专项浏览器测试通过。真实本机 CLI 与原生 UI 检测/选择/保存通过，原生共 33 项检查。提交 `c427b02` 的 Windows/Linux CI 全部通过，含 NSIS 安装启动及新增浏览器回归。详情见 [验收记录](reports/steam-account-discovery.md)。
 
-尚未验证：Windows 真实 Steam 客户端账号切换与并发文件更新、Flatpak 实机；Windows CI 结果按提交记录补充。
+尚未验证：Windows 真实 Steam 客户端账号切换与并发文件更新、Flatpak 实机；CI 使用合成账号文件，不代表 Steam 实机验收。
 
 存在问题：本机记录可能过期，多候选无唯一依据时需用户选择；读取错误时不擅自预选。Steam 配置格式没有稳定公开契约，保留手工 ID 兜底。
 
-下一阶段：完成 Windows/Linux CI，继续 Windows Steam 实机与原有游戏验收。
+下一阶段：继续 Windows Steam 实机与原有游戏验收。
 
 ## Windows 图标构建修复
 
